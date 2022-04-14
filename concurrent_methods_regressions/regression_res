@@ -1,0 +1,302 @@
+Logistic and linear Regression:
+
+/home/ign.fr_ekalinicheva/anaconda3/envs/safe_environment/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:765: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG)
+/home/ign.fr_ekalinicheva/anaconda3/envs/safe_environment/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:765: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG)
+/home/ign.fr_ekalinicheva/anaconda3/envs/safe_environment/lib/python3.7/site-packages/sklearn/linear_model/_logistic.py:765: ConvergenceWarning: lbfgs failed to converge (status=1):
+STOP: TOTAL NO. of ITERATIONS REACHED LIMIT.
+
+Increase the number of iterations (max_iter) or scale the data as shown in:
+    https://scikit-learn.org/stable/modules/preprocessing.html
+Please also refer to the documentation for alternative solver options:
+    https://scikit-learn.org/stable/modules/linear_model.html#logistic-regression
+  extra_warning_msg=_LOGISTIC_SOLVER_CONVERGENCE_MSG)
+[1 1 1 ... 1 1 1]
+Only vegetation-filled pixels
+shrub
+mean height true 0.89 m
+mean height pred 0.81 m
+MAE shrub 0.78 m
+MRE shrub 85.86 %
+
+
+understory
+mean height true 2.86 m
+mean height pred 1.53 m
+MAE understory 2.06 m
+MRE understory 81.8 %
+
+
+base_canopy
+mean height true 10.85 m
+mean height pred 4.05 m
+MAE base_canopy 7.31 m
+MRE base_canopy 67.88 %
+
+
+canopy
+mean height true 17.45 m
+mean height pred 17.01 m
+MAE canopy 3.82 m
+MRE canopy 24.86 %
+
+
+Placette_15
+[0 1 0 ... 1 1 1]
+Only vegetation-filled pixels
+shrub
+mean height true 0.94 m
+mean height pred 0.65 m
+MAE shrub 0.65 m
+MRE shrub 67.78 %
+
+
+understory
+mean height true 2.46 m
+mean height pred 1.09 m
+MAE understory 1.82 m
+MRE understory 76.8 %
+
+
+base_canopy
+mean height true 7.92 m
+mean height pred 2.97 m
+MAE base_canopy 4.81 m
+MRE base_canopy 57.46 %
+
+
+canopy
+mean height true 13.26 m
+mean height pred 12.05 m
+MAE canopy 3.96 m
+MRE canopy 31.84 %
+
+
+Placette_20
+[1 1 1 ... 1 1 1]
+Only vegetation-filled pixels
+shrub
+mean height true 0.89 m
+mean height pred 2.68 m
+MAE shrub 2.29 m
+MRE shrub 302.11 %
+
+
+understory
+mean height true 2.75 m
+mean height pred 4.23 m
+MAE understory 3.28 m
+MRE understory 242.29 %
+
+
+base_canopy
+mean height true 15.18 m
+mean height pred 6.59 m
+MAE base_canopy 8.33 m
+MRE base_canopy 56.73 %
+
+
+canopy
+mean height true 19.4 m
+mean height pred 19.33 m
+MAE canopy 2.86 m
+MRE canopy 18.41 %
+
+
+Only vegetation-filled pixels total
+MAE shrub 0.75 m
+MRE shrub 81.6 %
+Height mean shrub 0.6 m
+Height std shrub 1.0 m
+MAE understory 2.21 m
+MRE understory 111.7 %
+Height mean understory 1.8 m
+Height std understory 2.4 m
+MAE base_canopy 6.93 m
+MRE base_canopy 61.5 %
+Height mean base_canopy 4.9 m
+Height std base_canopy 2.3 m
+MAE canopy 3.54 m
+MRE canopy 24.3 %
+Height mean canopy 16.8 m
+Height std canopy 4.8 m
+shrub
+nothing : 78.98% | vegetation : 62.15%
+meanIoU 70.57%
+OA 84.38%
+understory
+nothing : 76.29% | vegetation : 40.54%
+meanIoU 58.42%
+OA 79.59%
+canopy
+nothing : 93.19% | vegetation : 99.51%
+meanIoU 96.35%
+OA 99.54%
+
+
+
+RF classifier and Regressor
+/home/ign.fr_ekalinicheva/anaconda3/envs/safe_environment/bin/python /home/ign.fr_ekalinicheva/PycharmProjects/stratum_occupancy_sexy_trees/regressions.py
+Placette_1
+Placette_10
+Placette_12
+Placette_13
+Placette_14
+Placette_16
+Placette_17
+Placette_18
+Placette_19
+Placette_2
+Placette_21
+Placette_22
+Placette_23
+Placette_24
+Placette_25
+Placette_26
+Placette_27
+Placette_28
+Placette_29
+Placette_3
+Placette_5
+Placette_6
+Placette_7
+Placette_8
+Placette_9
+Placette_92
+Placette_4
+[0 0 0 ... 0 0 0]
+Only vegetation-filled pixels
+shrub
+mean height true 0.89 m
+mean height pred 0.2 m
+MAE shrub 0.32 m
+MRE shrub 35.92 %
+
+
+understory
+mean height true 2.86 m
+mean height pred 0.8 m
+MAE understory 2.16 m
+MRE understory 90.66 %
+
+
+base_canopy
+mean height true 10.85 m
+mean height pred 4.17 m
+MAE base_canopy 7.59 m
+MRE base_canopy 74.29 %
+
+
+canopy
+mean height true 17.45 m
+mean height pred 15.77 m
+MAE canopy 3.7 m
+MRE canopy 24.17 %
+
+
+Placette_15
+[0 0 0 ... 0 0 0]
+Only vegetation-filled pixels
+shrub
+mean height true 0.94 m
+mean height pred 0.44 m
+MAE shrub 0.3 m
+MRE shrub 35.84 %
+
+
+understory
+mean height true 2.46 m
+mean height pred 0.81 m
+MAE understory 1.8 m
+MRE understory 77.22 %
+
+
+base_canopy
+mean height true 7.92 m
+mean height pred 2.63 m
+MAE base_canopy 4.7 m
+MRE base_canopy 54.64 %
+
+
+canopy
+mean height true 13.26 m
+mean height pred 11.03 m
+MAE canopy 3.22 m
+MRE canopy 26.71 %
+
+
+Placette_20
+[0 0 0 ... 0 0 0]
+Only vegetation-filled pixels
+shrub
+mean height true 0.89 m
+mean height pred 0.06 m
+MAE shrub 0.23 m
+MRE shrub 29.12 %
+
+
+understory
+mean height true 2.75 m
+mean height pred 0.45 m
+MAE understory 2.27 m
+MRE understory 87.84 %
+
+
+base_canopy
+mean height true 15.18 m
+mean height pred 6.3 m
+MAE base_canopy 8.26 m
+MRE base_canopy 59.37 %
+
+
+canopy
+mean height true 19.4 m
+mean height pred 18.45 m
+MAE canopy 2.83 m
+MRE canopy 18.23 %
+
+
+Only vegetation-filled pixels total
+MAE shrub 0.31 m
+MRE shrub 35.8 %
+Height mean shrub 0.8 m
+Height std shrub 0.3 m
+MAE understory 2.04 m
+MRE understory 85.0 %
+Height mean understory 0.8 m
+Height std understory 1.0 m
+MAE base_canopy 7.06 m
+MRE base_canopy 64.4 %
+Height mean base_canopy 5.2 m
+Height std base_canopy 3.2 m
+MAE canopy 3.32 m
+MRE canopy 22.7 %
+Height mean canopy 17.2 m
+Height std canopy 4.2 m
+shrub
+nothing : 93.16% | vegetation : 89.29%
+meanIoU 91.23%
+OA 95.65%
+understory
+nothing : 83.71% | vegetation : 62.47%
+meanIoU 73.09%
+OA 87.19%
+canopy
+nothing : 95.23% | vegetation : 99.66%
+meanIoU 97.45%
+OA 99.68%
+
+Process finished with exit code 0
