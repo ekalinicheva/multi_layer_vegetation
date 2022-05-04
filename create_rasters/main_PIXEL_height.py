@@ -31,21 +31,16 @@ pixel_size = 0.5
 double_layer = False
 
 
-
-
 def create_database(s):
 # for s in selected_placette_folders_final:
     pl_id = (re.search("Placette_([0-9]*)", s)).group(1)
-    print(s)
+    print(pl_id)
     # ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs_clipped.ply"
     ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs.ply"
     trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_cat.csv"
 
 
-
-
-
-    if os.path.exists(ply_trees_placette) and os.path.exists(trees_csv):
+    if ply_trees_placette and os.path.exists(trees_csv) and int(pl_id)==6:
         data_ply_trees_placette, col_full = open_ply(ply_trees_placette)
 
         path_placette = path + "arbres_par_placette/selected_data/Selected_data_for_placette_" + str(pl_id) + "/"
@@ -65,6 +60,7 @@ def create_database(s):
 
         H, W = int(np.ceil((y_max_plot - y_min_plot)/pixel_size)), int(np.ceil((x_max_plot - x_min_plot)/pixel_size))   #we change datatype to avoid problems with gdal later
 
+
         full_placette_df['x_round'] = np.floor(full_placette_df['x'] * (1 / pixel_size)) / (1 / pixel_size)
         full_placette_df['y_round'] = np.floor(full_placette_df['y'] * (1 / pixel_size)) / (1 / pixel_size)
 
@@ -75,6 +71,10 @@ def create_database(s):
         matrix_plot_binary_canopy = np.zeros((H, W), dtype=int)
         matrix_plot_binary_understory = np.zeros_like(matrix_plot_binary_canopy)
         matrix_plot_binary_shrub = np.zeros_like(matrix_plot_binary_canopy)
+
+        matrix_plot_classes_canopy = np.full((H, W), -1, dtype=int)
+        matrix_plot_classes_canopy_associated_height = np.full((H, W), -1, dtype=np.float32)    #we create this raster just to be able to produce correct canopy occupation gt
+
 
         matrix_plot_height_canopy = np.full((H, W), -1, dtype=np.float32)
         matrix_plot_crown_base_canopy = np.full((H, W), -1, dtype=np.float32)
@@ -90,9 +90,9 @@ def create_database(s):
         matrix_binary_pl_canopy_sure = np.full((H, W), -1)
 
         i = int((y_max_plot - y_min_plot) / pixel_size) - 1
-        for y in np.arange(y_min_plot, y_max_plot, pixel_size):
+        for y in np.arange(y_min_plot, y_max_plot, pixel_size).round(1):
             j = 0
-            for x in np.arange(x_min_plot, x_max_plot, pixel_size):
+            for x in np.arange(x_min_plot, x_max_plot, pixel_size).round(1):
                 # result = full_placette_df[(full_placette_df['x_round'] == x) & (full_placette_df['y_round'] == y)]
                 result = nodata_points[(nodata_points['x_round'] == x) & (nodata_points['y_round'] == y)]
                 result_full = full_placette_df[(full_placette_df['x_round'] == x) & (full_placette_df['y_round'] == y)]
@@ -149,6 +149,7 @@ def create_database(s):
             radius = tree_info['radius'].round(3)  # trunc radius
             houppier = tree_info['houppier'].round(3)  # height of base of tree crown
             diameter = tree_info['diameter_h']
+            category = tree_info['cat']
 
             data_ply_tree = data_ply_trees_placette[data_ply_trees_placette[:, -1] == tree_id]
             tree_coord = data_ply_tree[:, :3]
@@ -165,20 +166,17 @@ def create_database(s):
                 houppier = 0.1
 
 
-            x_min, x_max = np.min(subset_tree['x_round']), np.max(subset_tree['x_round']) + pixel_size
-            y_min, y_max = np.min(subset_tree['y_round']), np.max(subset_tree['y_round']) + pixel_size
-
+            x_min, x_max = np.min(subset_tree['x_round']).round(1), np.max(subset_tree['x_round']).round(1) + pixel_size
+            y_min, y_max = np.min(subset_tree['y_round']).round(1), np.max(subset_tree['y_round']).round(1) + pixel_size
 
             matrix_binary_tree = np.zeros((H, W), dtype=int)
             matrix_binary_tree_bottom = np.zeros((H, W), dtype=int)
-
-            # matrix_binary_tree_height = np.zeros((H, W), dtype=float)
-            # matrix_binary_tree_bottom_height = np.zeros((H, W), dtype=float)
-
+            # print(np.arange(x_min, x_max, pixel_size, dtype=np.float64))
+            # print(np.arange(y_min, y_max, pixel_size, dtype=np.float64))
             i = int((y_max_plot - y_min)/pixel_size) - 1
-            for y in np.arange(y_min, y_max, pixel_size):
+            for y in np.arange(y_min, y_max, pixel_size).round(1):
                 j = int((x_min - x_min_plot)/pixel_size)
-                for x in np.arange(x_min, x_max, pixel_size):
+                for x in np.arange(x_min, x_max, pixel_size).round(1):
                     result = subset_tree[(subset_tree['x_round'] == x) & (subset_tree['y_round'] == y) & (subset_tree['z'] >= houppier)]  #TODO: add crown or trunk
                     result_no_data = nodata_points[(nodata_points['x_round'] == x) & (nodata_points['y_round'] == y)]
                     if len(result) > 0:
@@ -187,6 +185,12 @@ def create_database(s):
                             no_data = [result_no_data[result_no_data['z']>understory_height]] if len(result_no_data[result_no_data['z']>understory_height])>0 else [1000]
                             # print(no_data)
                             matrix_plot_height_canopy[i][j] = max(np.max(result['z']), matrix_plot_height_canopy[i][j]) #HERE
+                            # print(np.max(result['z']))
+                            # print(max(matrix_plot_classes_canopy_associated_height[i][j], np.max(result_no_data['z'])))
+                            matrix_plot_classes_canopy_associated_height[i][j] = np.max(result['z']) if np.max(result['z'])> max(matrix_plot_classes_canopy_associated_height[i][j], np.max(result_no_data['z'])) else max(matrix_plot_classes_canopy_associated_height[i][j], np.max(result_no_data['z']))# we create this raster just to be able to produce correct canopy occupation gt
+                            matrix_plot_classes_canopy[i][j] = category if np.max(result['z'])==matrix_plot_classes_canopy_associated_height[i][j] else matrix_plot_classes_canopy[i][j]
+
+
                             if matrix_plot_crown_base_canopy[i][j] != -1:
                                 if houppier < 1 and np.min(result['z']) < 4:
                                     matrix_plot_crown_base_canopy[i][j] = np.max([-1,
@@ -239,6 +243,18 @@ def create_database(s):
         matrix_plot_height_shrub[matrix_binary_pl_shrub_sure==0]=0
 
 
+        matrix_plot_classes_canopy[matrix_plot_classes_canopy == 23] = 4  # pine class
+        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 3) | (matrix_plot_classes_canopy == 7)] = 5    # aulne and charme class
+        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != 5) & (matrix_plot_classes_canopy != 7) & (
+        #             matrix_plot_classes_canopy != 23) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
+        matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
+        matrix_plot_classes_canopy[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
+
+        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
+        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
+
+
+
         pixel_size_string = re.sub('[.,]', '', str(pixel_size))
 
         create_tiff(nb_channels=4,
@@ -255,6 +271,11 @@ def create_database(s):
                                                                                  [matrix_plot_crown_base_canopy],
                                                                                  [matrix_plot_height_canopy]),
                                                                                 0), geotransformation=geo, nodata= None)
+        # geo = [x_min_plot, pixel_size/2, 0, y_max_plot, 0, -pixel_size/2]
+        # create_tiff(nb_channels=1,
+        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_6_classes_" + re.sub('[.,]', '', str(pixel_size/2)) + ".tif", width=W*2,
+        #             height=H*2, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy.repeat(2, axis=0).repeat(2, axis=1), geotransformation=geo, nodata= None)
+
         # # Different pixel size
         # pixel_size_1 = 1
         #

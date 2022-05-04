@@ -21,20 +21,23 @@ parser.add_argument('--cuda', default=1, type=int, help="Whether we use cuda (1)
 parser.add_argument('--folds', default=1, type=int, help="Number of folds for cross validation model training")
 
 # Model Parameters
-parser.add_argument('--n_class', default=7, type=int,
+parser.add_argument('--n_class', default=6, type=int,
                     help="[5,6,7] Size of the model output vector. In our case 6 - different vegetation coverage types: ground, ground vegetation, understory, decidious, coniferous, stem. "
                          "If 7 -  ground, ground vegetation, understory, decidious (mostly oaks), coniferous, aulne, stem")
-parser.add_argument('--input_feats', default='xyzird', type=str,
-                    help="Point features that we keep. To choose between xyzir. Please, do not permute. "
-                         "xyz - coordinates, i - intensity, r - return number, d - distance to river.")
-parser.add_argument('--subsample_size', default=4096 * 4, type=int, help="Subsample cloud size")
+parser.add_argument('--nb_stratum', default=3, type=int,
+                    help="Number of vegetation stratum that we compute 3 - ground vegetation + understory + overstory")
+parser.add_argument('--input_feats', default='xyzinr', type=str,
+                    help="Point features that we keep. To choose between xyzinrd. Please, do not permute. "
+                         "xyz - coordinates, i - intensity, n - number of returns, r - return number, d - distance to river.")
+
+
+
 # parser.add_argument('--diam_pix', default=20, type=int,
 #                     help="Size of the output stratum raster (its diameter in pixels)")
 parser.add_argument('--logl', default=True, type=bool, help="Whether we add loglikelihood loss or not")
 parser.add_argument('--m', default=0.1, type=float,
                     help="Loss regularization. The weight of the negative loglikelihood loss in the total loss")
-parser.add_argument('--nb_stratum', default=3, type=int,
-                    help="Number of vegetation stratum that we compute 3 - ground vegetation + understory + overstory")
+
 parser.add_argument('--ent', default=False, type=bool, help="Whether we add entropy loss or not")
 parser.add_argument('--e', default=0.1, type=float,
                     help="Loss regularization for entropy. The weight of the entropy loss in the total loss")
@@ -56,9 +59,16 @@ parser.add_argument('--NR_ite_max', default=10, type=int, help='Max number of Ne
 #                     help="Whether we use softmax layer for the model output (True) of sigmoid (False)")
 
 # Network Parameters
-parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
+parser.add_argument('--subsample_size', default=4096 * 3, type=int, help="Subsample cloud size")
+parser.add_argument('--smart_sampling', default=False, type=bool,
+                    help="Whether we sample points depending on their height or not")
+# parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
+parser.add_argument('--ratio', default=[0.5, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
+
 parser.add_argument('--rr', default=[0.1, 0.25, 0.5], type=float, nargs=3, help="Radius of PointNet2 layers samplings")
-parser.add_argument('--r_num_pts', default=[12288, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
+# parser.add_argument('--r_num_pts', default=[12288, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
+parser.add_argument('--r_num_pts', default=[8192, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
+
 parser.add_argument('--drop', default=0.25, type=float, help="Probability value of the DropOut layer of the model")
 parser.add_argument("--log_embeddings", default=False, action="store_true",
                     help="False to avoid logging embeddings")
@@ -97,12 +107,19 @@ parser.add_argument('--data_augmentation', default=True, type=bool,
                     help="Whether we do data augmentation or not.")
 
 
+parser.add_argument('--inference', default=False, type=bool,
+                    help="Whether we train model or produce the results with the trained one.")
+parser.add_argument('--path_inference', default="DATASETS/Processed_GT/inference_data/placettes_full/", type=str,
+                    help="Main folder directory")
+parser.add_argument('--trained_ep', default=25, type=int,
+                    help="The epoch we load from the pretrained model.")
+parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-05-02_184310/", type=str,
+                    help="Path to the pretrained model in case we use it.")
+
+
 parser.add_argument('--train_model', default=True, type=bool,
-                    help="Whether we train model or produce the results with the trained one.")
-parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-02-15_131210/", type=str,
-                    help="Whether we train model or produce the results with the trained one.")
-parser.add_argument('--trained_ep', default=20, type=int,
-                    help="The epoch we load.")
+                    help="Whether we train model or use the pretrained one to continue the training.")
+
 
 
 
@@ -113,6 +130,7 @@ assert (args.nb_stratum in [3, 4]), "Number of stratum should be 3 or 4!"
 assert (args.lr_decay < 1), "Learning rate decrease should be smaller than 1, as learning rate should decrease"
 
 args.path = os.path.expanduser("~/" + args.path)
+args.path_inference = os.path.expanduser("~/" + args.path_inference)
 
 args.n_input_feats = len(args.input_feats)  # number of input features
 

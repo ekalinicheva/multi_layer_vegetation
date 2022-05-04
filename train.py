@@ -41,8 +41,7 @@ def train(model, PCC, train_set, params, optimizer, cm, cm_2d, args):
 
     cm.clear()
     cm_2d.clear()
-    for index_batch, (cloud, gt, gt_points, yx) in enumerate(loader):
-
+    for index_batch, (cloud, gt, gt_points, yx, _) in enumerate(loader):
         if PCC.is_cuda:
             gt = gt.cuda()
             gt_points = gt_points.cuda()
@@ -56,7 +55,7 @@ def train(model, PCC, train_set, params, optimizer, cm, cm_2d, args):
         binary_pred[flatten_pred>=0.5]=1
         cm_2d.add(gt.cpu().numpy().flatten(), binary_pred)
 
-        loss_3d = loss_cross_entropy(pred_pointwise_logits, gt_points)
+        loss_3d = loss_cross_entropy(pred_pointwise_logits, gt_points, args)
 
         loss_raster = loss_bce(pred_rasters, gt, args)
 

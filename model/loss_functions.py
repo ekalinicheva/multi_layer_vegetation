@@ -57,15 +57,18 @@ def loss_bce(pred_pixels, gt, args, level_loss=False):
     return bce_loss(pred_pixels.flatten()[has_values.flatten()], gt.float().flatten()[has_values.flatten()])
 
 
-# cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.05, 0.5, 1, 0.2, 0.7, 0.7]).cuda(), ignore_index=-1)
-cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.2, 1, 1, 0.2, 1, 1]).cuda(), ignore_index=-1)
-cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.2, 1, 1, 0.2, 1, 1, 1]).cuda(), ignore_index=-1)
+
 
 # cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.2, 1, 1, 0.2, 0.5, 1]).cuda(), ignore_index=-1)
 # cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', ignore_index=-1)
-def loss_cross_entropy(pred_pointwise, gt_points, level_loss=False):
-    if level_loss:
-        return cross_loss(pred_pointwise, gt_points)
+def loss_cross_entropy(pred_pointwise, gt_points, args):
+    # cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.05, 0.5, 1, 0.2, 0.7, 0.7]).cuda(), ignore_index=-1)
+    if args.n_class == 6:
+        cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.2, 1, 1, 0.2, 1, 1]).cuda(),
+                                               ignore_index=-1)
+    else:
+        cross_loss = torch.nn.CrossEntropyLoss(reduction='mean', weight=torch.Tensor([0.2, 1, 1, 0.2, 1, 1, 1]).cuda(),
+                                               ignore_index=-1)
     return cross_loss(pred_pointwise, gt_points)
 
 

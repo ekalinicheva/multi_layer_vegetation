@@ -5,6 +5,20 @@ from sklearn.neighbors import NearestNeighbors
 np.set_printoptions(threshold=sys.maxsize)
 
 
+x = [5, 15]
+y = [1, 0.5]
+slope, intercept = np.polyfit(x, y, 1)
+
+
+def smart_weight(z):
+    if z==0:
+        w = 0.5
+    elif 0<z<=5:
+        w = 1
+    elif 5<z<=15:
+        10/(z-5)
+
+
 class PointCloudClassifier:
     """
     The main point cloud classifier Class
@@ -20,9 +34,10 @@ class PointCloudClassifier:
         self.n_class = args.n_class # number of classes in the output
         self.is_cuda = args.cuda  # wether to use GPU acceleration
         self.indices_to_keep = []
+        self.smart_sampling = args.smart_sampling
         feats = args.input_feats
         for f in range(len(feats)):
-            if feats[f] in "xyzird":
+            if feats[f] in "xyzinrd":
                 self.indices_to_keep.append(f)
 
     def run(self, model, clouds, cm):
@@ -59,11 +74,39 @@ class PointCloudClassifier:
             cloud = clouds[i_batch][self.indices_to_keep, :]    # we choose features, but do not keep origins indices
             n_points = cloud.shape[1]  # number of points in the considered cloud
             if n_points > self.subsample_size:
-                selected_points = np.random.choice(n_points, self.subsample_size,
-                                                   replace=False)
+
+                if self.smart_sampling:
+                    z = cloud[2]
+                    weight = np.full_like(z, 0.5)
+                    # weight[z == 0] = 0.5
+                    weight[(z > 0) & (z <= 5)] = 1
+                    weight[(z > 5) & (z <= 15)] = z[(z > 5) & (z <= 15)] * (-0.05) + 1.25
+                    # weight[z > 15] = 0.5
+                    condition = np.asarray([(z > 0) & (z <= 5)])
+                    # np.where(condition)
+                    # condition.sum()
+                    # all_taken = np.where((z > 0) & (z <= 5))
+                    # selected_points = np.concatenate((all_taken, np.random.choice(np.setdiff1d(np.arange(n_points), all_taken, assume_unique=True), self.subsample_size-len(all_taken),
+                    #                                    replace=False, p=weight/weight.sum())), 0)
+                    selected_points = np.concatenate((np.where(condition),
+                                                      np.random.choice(np.where(not condition), self.subsample_size - condition.sum(),
+                                                                       replace=False, p=weight[condition] / weight[condition].sum())), 0)
+
+                else:
+                    selected_points = np.random.choice(n_points, self.subsample_size,
+                                                       replace=False)
+
             else:
-                selected_points = np.random.choice(n_points, self.subsample_size,
-                                                   replace=True)
+                # selected_points = np.random.choice(n_points, self.subsample_size,
+                #                                    replace=True)
+                if self.subsample_size - n_points < n_points:
+                    selected_points = np.concatenate((np.arange(n_points),
+                                                      np.random.choice(n_points, self.subsample_size - n_points,
+                                                           replace=False)), 0)  #we use some points several times, without replacement
+                else:
+                    selected_points = np.concatenate((np.arange(n_points),
+                                                      np.random.choice(n_points, self.subsample_size - n_points,
+                                                            replace=True)), 0)
             cloud = cloud[:, selected_points]  # reduce the current cloud to the selected points
 
             sampled_clouds[i_batch, :, :] = cloud.clone()  # place current sampled cloud in sampled_clouds
@@ -90,6 +133,7 @@ class PointCloudClassifier:
             prediction_cloud_logits = point_logits[i_batch, :, closest_point]
             prediction_batch_logits = torch.cat((prediction_batch_logits, prediction_cloud_logits), 1)
             prediction_batches.append(prediction_cloud)
-            cm.add(cloud[self.n_input_feats].cpu().numpy(), torch.argmax(prediction_cloud, 0).cpu().detach().numpy())
+            if cm is not None:
+                cm.add(cloud[self.n_input_feats].cpu().numpy(), torch.argmax(prediction_cloud, 0).cpu().detach().numpy())
 
         return prediction_batch.permute(1, 0), prediction_batches, prediction_batch_logits.permute(1, 0)

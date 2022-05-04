@@ -10,8 +10,9 @@ import pickle
 from train import *
 from testing import *
 from model.accuracy import *
-from model.model_pointnet import PointNet
+# from model.model_pointnet import PointNet
 from model.model_pointnet2 import PointNet2
+# from model.model_pointnet2_small import PointNet2
 from utils.point_cloud_classifier import PointCloudClassifier
 from utils.useful_functions import *
 from utils.confusion_matrix import ConfusionMatrix
@@ -21,10 +22,24 @@ def train_full(args, params, train_set, test_set):
     """The full training loop"""
     # initialize the model
     # model = PointNet(args.MLP_1, args.MLP_2, args.MLP_3, args)
-    if args.train_model:
-        model = PointNet2(args)
+
+    model = PointNet2(args)
+
+    # define the optimizer
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+    scheduler = StepLR(optimizer, step_size=args.step_size, gamma=args.lr_decay)
+
+    if not args.train_model:
+        # model = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
+        checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler'])
+        epoch = checkpoint['epoch']
     else:
-        model = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
+        epoch = 0
+    print(scheduler.get_lr())
+
     print("model done")
     # writer = SummaryWriter(results_path + "runs/"+run_name + "fold_" + str(fold_id) +"/")
     writer = SummaryWriter(args.results_path + "runs/" + args.run_name + "/")
@@ -43,15 +58,8 @@ def train_full(args, params, train_set, test_set):
 
     PCC = PointCloudClassifier(args)
 
-
-    # define the optimizer
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
-    scheduler = StepLR(optimizer, step_size=args.step_size, gamma=args.lr_decay)
-
-    if args.n_epoch>0:
-        for i_epoch in range(args.n_epoch):
-            if not args.train_model:
-                i_epoch += args.trained_ep
+    if args.n_epoch > 0:
+        for i_epoch in range(epoch, args.n_epoch):
             scheduler.step()
             # train one epoch
             train_losses = train(model, PCC, train_set, params, optimizer, cm, cm_2d, args)
@@ -67,7 +75,26 @@ def train_full(args, params, train_set, test_set):
                 gc.collect()
                 writer = write_to_writer(writer, args, i_epoch, test_losses, train=False)
 
-                torch.save(model, args.stats_path + "/epoch_" + str(i_epoch + 1) + '.pt')
+                # torch.save(model, args.stats_path + "/epoch_" + str(i_epoch + 1) + '.pt')
+                if "d" in args.input_feats:
+                    torch.save({
+                        'epoch': i_epoch + 1,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler': scheduler.state_dict(),
+                        'max_dist': args.dist_max,
+                        'z_max': args.z_max
+                    }, args.stats_path + "/epoch_" + str(i_epoch + 1) + '.pt')
+                else:
+                    torch.save({
+                        'epoch': i_epoch + 1,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler': scheduler.state_dict(),
+                        'z_max': args.z_max
+                    }, args.stats_path + "/epoch_" + str(i_epoch + 1) + '.pt')
+
+
                 end_time = time.time()
                 print("Time", end_time - start_time)
     else:

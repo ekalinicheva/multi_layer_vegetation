@@ -11,6 +11,7 @@ from utils.open_ply_all import *
 from model.loss_functions import *
 from model.accuracy import *
 from config import args
+from inference import inference
 
 
 print(torch.cuda.is_available())
@@ -40,11 +41,16 @@ def main():
     args.val_pl = np.asarray([])
     args.train_pl = np.setdiff1d(np.setdiff1d(args.pl_id_list, args.val_pl, assume_unique=True), args.test_pl, assume_unique=True)
 
-    args.inference_pl = np.asarray([])
+    # args.inference_pl = np.arange(2, 30)
+    #
+    # for ip in args.inference_pl:
+    #     inference_pl_ = np.asarray([ip*10+1, ip*10+2, ip*10+3])
+    #     for pl in inference_pl_:
+    #         args.inference_pl = np.asarray([pl])
+
+
 
     # all_points, dataset, mean_dataset, col_full, gt_rasters_dataset, dist_max = open_ply_all(args)
-
-
 
     folder_name_params = "rg_" + str(args.regular_grid_size) + "_sg_" + str(args.sample_grid_size) + '_plot_r_' + str(args.plot_radius) + '_pixel_size_' + str(args.pixel_size) + '_min_pts_cyl_' + str(args.min_pts_cylinder) + "_n_plots_" + str(len(args.pl_id_list))
     path_cylinders = 'saved_data/' + folder_name_params + "/"
@@ -54,44 +60,50 @@ def main():
     # We open las files and create a dataset
     print("Loading data in memory")
     args.gt_rasters_dataset = None
-    if os.path.exists(path_cylinders) and len(os.listdir(path_cylinders)) != 0:
-        z_all = np.load(path_cylinders + "/all_zzzz.npy")
-        args.mean_dataset = np.load(path_cylinders + "/mean_dataset.npy")
-        args.dist_max = np.load(path_cylinders + "/dist_max.npy")
-        args.z_max = np.max(
-            z_all)  # maximum z value for data normalization, obtained from the normalized dataset analysis
-        cylinders_dataset_by_plot = torch.load(path_cylinders + '/cylinders_dataset_by_plot.pt')
-        cylinder_rasters_gt_by_plot = torch.load(path_cylinders + '/cylinder_rasters_gt_by_plot.pt')
+    if not args.inference:
+        if os.path.exists(path_cylinders) and len(os.listdir(path_cylinders)) != 0:
+            z_all = np.load(path_cylinders + "/all_zzzz.npy")
+            args.mean_dataset = np.load(path_cylinders + "/mean_dataset.npy")
+            args.z_max = np.max(
+                z_all)  # maximum z value for data normalization, obtained from the normalized dataset analysis
+            xy_min_coords_by_plot = torch.load(path_cylinders + '/xy_min_coords_by_plot.pt')
+            cylinders_dataset_by_plot = torch.load(path_cylinders + '/cylinders_dataset_by_plot.pt')
+            cylinder_rasters_gt_by_plot = torch.load(path_cylinders + '/cylinder_rasters_gt_by_plot.pt')
+            if "d" in args.input_feats:
+                args.dist_max = torch.load(path_cylinders + "/dist_max.pt").numpy()[0]
+        else:
+            all_points, dataset, mean_dataset, col_full, gt_rasters_dataset, dist_max = open_ply_all(args)
+            args.mean_dataset = mean_dataset
+            args.gt_rasters_dataset = gt_rasters_dataset
+
+
+            print("create cylinders")
+            print(gt_rasters_dataset.keys())
+            cylinders_dataset_by_plot, cylinder_rasters_gt_by_plot, xy_min_coords_by_plot = create_grids(dataset, gt_rasters_dataset, args)
+            args.dist_max = dist_max
+            z_all = all_points[:, 2]
+            args.z_max = np.max(
+                z_all)  # maximum z value for data normalization, obtained from the normalized dataset analysis
+            create_dir(path_cylinders)
+            torch.save(cylinders_dataset_by_plot, path_cylinders + '/cylinders_dataset_by_plot.pt')
+            torch.save(cylinder_rasters_gt_by_plot, path_cylinders + '/cylinder_rasters_gt_by_plot.pt')
+            torch.save(xy_min_coords_by_plot, path_cylinders + '/xy_min_coords_by_plot.pt')
+            np.save(path_cylinders + "/mean_dataset.npy", mean_dataset)
+            np.save(path_cylinders + "/col_full.npy", col_full)
+            np.save(path_cylinders + "/all_zzzz.npy", z_all)
+            if "d" in args.input_feats:
+                torch.save(torch.Tensor([dist_max]), path_cylinders + "/dist_max.pt")
+
+        cylinder_rasters_gt = sum(cylinder_rasters_gt_by_plot.values(), [])
+
     else:
-        all_points, dataset, mean_dataset, col_full, gt_rasters_dataset, dist_max = open_ply_all(args)
+        all_points, dataset, mean_dataset, col_full, gt_rasters_dataset = open_ply_inference(args)
         args.mean_dataset = mean_dataset
-        args.gt_rasters_dataset = gt_rasters_dataset
-        args.dist_max = dist_max
-        z_all = all_points[:, 2]
-        args.z_max = np.max(
-            z_all)  # maximum z value for data normalization, obtained from the normalized dataset analysis
 
-        print("create cylinders")
-        print(gt_rasters_dataset.keys())
-        cylinders_dataset_by_plot, cylinder_rasters_gt_by_plot = create_grids(dataset, gt_rasters_dataset, args, train=None)
-        create_dir(path_cylinders)
-        torch.save(cylinders_dataset_by_plot, path_cylinders + '/cylinders_dataset_by_plot.pt')
-        torch.save(cylinder_rasters_gt_by_plot, path_cylinders + '/cylinder_rasters_gt_by_plot.pt')
-        np.save(path_cylinders + "/mean_dataset.npy", mean_dataset)
-        np.save(path_cylinders + "/col_full.npy", col_full)
-        np.save(path_cylinders + "/all_zzzz.npy", z_all)
-        np.save(path_cylinders + "/dist_max.npy", dist_max)
+        cylinders_dataset_by_plot, _, xy_min_coords_by_plot = create_grids(dataset, None, args)
 
-
-    # args.z_max = args.plot_radius
+    xy_min_coords = sum(xy_min_coords_by_plot.values(), [])
     cylinders_dataset = sum(cylinders_dataset_by_plot.values(), [])
-    cylinder_rasters_gt = sum(cylinder_rasters_gt_by_plot.values(), [])
-
-    #
-    # if len(args.inference_pl)>0:
-    #     all_points, dataset, mean_dataset, col_full, gt_rasters_dataset = open_ply_all(args, inference=True)
-    #     cylinders_dataset_by_plot_inf, cylinder_rasters_gt_by_plot_inf = create_grids(dataset, gt_rasters_dataset, args, train=None)
-
 
 
     pl_id_plus_cylinders = np.empty((0, 2), dtype=int)
@@ -102,8 +114,6 @@ def main():
                                                                                                                      1)),
                                   1)
         pl_id_plus_cylinders = np.concatenate((pl_id_plus_cylinders, new_list), 0)
-
-
 
 
 
@@ -119,24 +129,25 @@ def main():
 
     train_list = args.train_pl
     test_list = args.test_pl
+    if args.inference:
+        inference_list = args.inference_pl
 
     index_dict = {}
 
 
     print("creating datasets")
     # generate the train and test dataset
-    test_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in test_list]][:, 1],
-                                       functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, train=False, index_dict=index_dict, args=args))
-    train_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in train_list]][:, 1],
-                                        functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, train=True, index_dict=index_dict, args=args))
+    if not args.inference:
+        test_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in test_list]][:, 1],
+                                           functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, min_coords=xy_min_coords, train=False, index_dict=index_dict, args=args))
+        train_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in train_list]][:, 1],
+                                            functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, min_coords=xy_min_coords, train=True, index_dict=index_dict, args=args))
+        trained_model, final_train_losses_list, final_test_losses_list = train_full(args, params, train_set, test_set)
+    else:
+        inference_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in inference_list]][:, 1],
+                                            functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=None, min_coords=xy_min_coords, train=False, index_dict=index_dict, args=args))
+        inference(inference_set, args)
 
-
-    trained_model, final_train_losses_list, final_test_losses_list = train_full(args, params, train_set, test_set)
-
-    # save the trained model
-    PATH = os.path.join(stats_path, "model_ss_" + str(args.subsample_size) + "_dp_" + str(args.diam_pix) + ".pt")
-    torch.save(trained_model, PATH)
-#
 
 if __name__ == "__main__":
     main()

@@ -45,7 +45,7 @@ def evaluate(model, PCC, test_set, params, args, epoch_nb, cm, cm_2d, last_epoch
 
     cm.clear()
     cm_2d.clear()
-    for index_batch, (cloud, gt, gt_points, yx) in enumerate(loader):
+    for index_batch, (cloud, gt, gt_points, yx, xy_min_cyl) in enumerate(loader):
         if PCC.is_cuda:
             gt = gt.cuda()
             gt_points = gt_points.cuda()
@@ -65,7 +65,7 @@ def evaluate(model, PCC, test_set, params, args, epoch_nb, cm, cm_2d, last_epoch
         cm_2d.add(gt.cpu().numpy().flatten(), binary_pred)
 
         # we compute two losses (negative loglikelihood and the absolute error loss for 2 or 3 stratum)
-        loss_3d = loss_cross_entropy(pred_pointwise_logits, gt_points)
+        loss_3d = loss_cross_entropy(pred_pointwise_logits, gt_points, args)
         loss_raster = loss_bce(pred_rasters, gt, args)
         if args.logl:
             loss_log, likelihood = loss_loglikelihood(pred_pointwise, cloud, params, PCC,
@@ -95,7 +95,7 @@ def evaluate(model, PCC, test_set, params, args, epoch_nb, cm, cm_2d, last_epoch
         loss_meter.add(loss.item())
 
         for c in range(len(cloud)):
-            cloud[c][:2] = cloud[c][:2] * args.plot_radius + (cloud[c][-4:-2] + args.plot_radius) + args.mean_dataset.reshape(2, 1)
+            cloud[c][:2] = cloud[c][:2] * args.plot_radius + (xy_min_cyl[c].reshape(2, 1) + args.plot_radius) + args.mean_dataset.reshape(2, 1)
             cloud[c][2] = cloud[c][2] * args.plot_radius
 
 

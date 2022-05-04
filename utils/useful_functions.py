@@ -30,6 +30,7 @@ def create_dir(dir_name):
 
 
 def open_ply(ply_name):
+    print(ply_name)
     assert (os.path.isfile(ply_name))
     with open(ply_name, 'rb') as f:
         plydata = PlyData.read(f)

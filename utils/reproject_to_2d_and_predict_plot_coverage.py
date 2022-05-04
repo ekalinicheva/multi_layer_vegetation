@@ -3,7 +3,7 @@ import torch
 from torch_scatter import scatter_max, scatter_mean
 
 
-def project_to_2d(pred_pointwise, pred_pointwise_b, yx_batch, PCC, args):
+def project_to_2d(pred_pointwise, pred_pointwise_b, ij_batch, PCC, args):
     """
     We do all the computation to obtain
     pred_pl - [Bx4] prediction vector for the plot
@@ -17,33 +17,10 @@ def project_to_2d(pred_pointwise, pred_pointwise_b, yx_batch, PCC, args):
     # we project 3D points to 2D plane
     # We use torch scatter to process
     for b in range(len(pred_pointwise_b)):
-        yx = yx_batch[b]
-        # mean_plot = means[b]
-        # if angle_degrees is not None:
-        #     c, s = np.cos(np.radians(360 - angle_degrees[b])), np.sin(np.radians(360-angle_degrees[b]))
-        #     M = np.array(((c, -s), (s, c)))  # rotation matrix around axis z with angle "angle", counterclockwise
-        #     current_cloud[:2] = torch.mm(torch.Tensor(M).double(), current_cloud[:2])
-        #
-        # xy = current_cloud[:2].clone() * args.plot_radius + mean_plot.reshape(2, 1) + args.mean_dataset.reshape(2, 1)
-        # xy_min_cyl = current_cloud[-4:-2] + args.mean_dataset.reshape(2, 1)
-        #
-        #
-        # if PCC.is_cuda:
-        #     xy = xy.cuda()
-        #     xy_min_cyl = xy_min_cyl.cuda()
-        #
-        # xy_round = torch.floor(xy * (1 / args.pixel_size)) / (1 / args.pixel_size)
-        #
-        # new_xy = ((xy_round - xy_min_cyl)/args.pixel_size).int()    # no matter what, we always clip by whole coordinates
-        #
-        #
-        # yx = new_xy[[1, 0], :]   # we swap x and y tp be able to pass to ij discrete coords
-        # yx[0] = args.diam_pix - 1 - yx[0]
-
+        ij = ij_batch[b]
         if PCC.is_cuda:
-            yx = yx.cuda()
-        unique, index = torch.unique(yx.T, dim=0, return_inverse=True)
-
+            ij = ij.cuda()
+        unique, index = torch.unique(ij.T, dim=0, return_inverse=True)
         index_b = torch.full(torch.unique(index).size(), b)
 
         if PCC.is_cuda:
