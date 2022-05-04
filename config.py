@@ -59,15 +59,15 @@ parser.add_argument('--NR_ite_max', default=10, type=int, help='Max number of Ne
 #                     help="Whether we use softmax layer for the model output (True) of sigmoid (False)")
 
 # Network Parameters
-parser.add_argument('--subsample_size', default=4096 * 3, type=int, help="Subsample cloud size")
+parser.add_argument('--subsample_size', default=4096 * 4, type=int, help="Subsample cloud size")
 parser.add_argument('--smart_sampling', default=False, type=bool,
                     help="Whether we sample points depending on their height or not")
-# parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
-parser.add_argument('--ratio', default=[0.5, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
+parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
+# parser.add_argument('--ratio', default=[0.5, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
 
 parser.add_argument('--rr', default=[0.1, 0.25, 0.5], type=float, nargs=3, help="Radius of PointNet2 layers samplings")
-# parser.add_argument('--r_num_pts', default=[12288, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
-parser.add_argument('--r_num_pts', default=[8192, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
+parser.add_argument('--r_num_pts', default=[12288, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
+# parser.add_argument('--r_num_pts', default=[8192, 2048, 512], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
 
 parser.add_argument('--drop', default=0.25, type=float, help="Probability value of the DropOut layer of the model")
 parser.add_argument("--log_embeddings", default=False, action="store_true",
@@ -111,14 +111,15 @@ parser.add_argument('--inference', default=False, type=bool,
                     help="Whether we train model or produce the results with the trained one.")
 parser.add_argument('--path_inference', default="DATASETS/Processed_GT/inference_data/placettes_full/", type=str,
                     help="Main folder directory")
-parser.add_argument('--trained_ep', default=25, type=int,
+parser.add_argument('--trained_ep', default=20, type=int,
                     help="The epoch we load from the pretrained model.")
-parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-05-02_184310/", type=str,
+parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-05-04_111156/", type=str,
                     help="Path to the pretrained model in case we use it.")
 
 
-parser.add_argument('--train_model', default=True, type=bool,
-                    help="Whether we train model or use the pretrained one to continue the training.")
+parser.add_argument('--train_model', default=False, type=bool,
+                    help="Whether we train model or use the pretrained one to continue the training."
+                         "If False, we use pretrained model at --path_model with --trained_ep epoch.")
 
 
 
