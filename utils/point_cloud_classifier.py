@@ -35,6 +35,7 @@ class PointCloudClassifier:
         self.is_cuda = args.cuda  # wether to use GPU acceleration
         self.indices_to_keep = []
         self.smart_sampling = args.smart_sampling
+        self.plot_radius = args.plot_radius
         feats = args.input_feats
         for f in range(len(feats)):
             if feats[f] in "xyzinrd":
@@ -76,21 +77,24 @@ class PointCloudClassifier:
             if n_points > self.subsample_size:
 
                 if self.smart_sampling:
-                    z = cloud[2]
+                    z = cloud[2] * self.plot_radius
                     weight = np.full_like(z, 0.5)
                     # weight[z == 0] = 0.5
                     weight[(z > 0) & (z <= 5)] = 1
                     weight[(z > 5) & (z <= 15)] = z[(z > 5) & (z <= 15)] * (-0.05) + 1.25
                     # weight[z > 15] = 0.5
-                    condition = np.asarray([(z > 0) & (z <= 5)])
+                    condition = np.asarray((z > 0) & (z <= 5))
+                    # print(condition)
+                    # print(np.where(~condition)[0])
+                    # print(condition.sum())
                     # np.where(condition)
                     # condition.sum()
                     # all_taken = np.where((z > 0) & (z <= 5))
                     # selected_points = np.concatenate((all_taken, np.random.choice(np.setdiff1d(np.arange(n_points), all_taken, assume_unique=True), self.subsample_size-len(all_taken),
                     #                                    replace=False, p=weight/weight.sum())), 0)
-                    selected_points = np.concatenate((np.where(condition),
-                                                      np.random.choice(np.where(not condition), self.subsample_size - condition.sum(),
-                                                                       replace=False, p=weight[condition] / weight[condition].sum())), 0)
+                    selected_points = np.concatenate((np.where(condition)[0],
+                                                      np.random.choice(np.where(~condition)[0], self.subsample_size - condition.sum(),
+                                                                       replace=False, p=weight[np.where(~condition)] / weight[np.where(~condition)].sum())), 0)
 
                 else:
                     selected_points = np.random.choice(n_points, self.subsample_size,
