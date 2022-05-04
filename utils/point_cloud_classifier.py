@@ -93,8 +93,6 @@ class PointCloudClassifier:
                                                        replace=False)
 
             else:
-                # selected_points = np.random.choice(n_points, self.subsample_size,
-                #                                    replace=True)
                 if self.subsample_size - n_points < n_points:
                     selected_points = np.concatenate((np.arange(n_points),
                                                       np.random.choice(n_points, self.subsample_size - n_points,
