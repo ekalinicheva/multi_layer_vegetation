@@ -84,14 +84,6 @@ class PointCloudClassifier:
                     weight[(z > 5) & (z <= 15)] = z[(z > 5) & (z <= 15)] * (-0.05) + 1.25
                     # weight[z > 15] = 0.5
                     condition = np.asarray((z > 0) & (z <= 5))
-                    # print(condition)
-                    # print(np.where(~condition)[0])
-                    # print(condition.sum())
-                    # np.where(condition)
-                    # condition.sum()
-                    # all_taken = np.where((z > 0) & (z <= 5))
-                    # selected_points = np.concatenate((all_taken, np.random.choice(np.setdiff1d(np.arange(n_points), all_taken, assume_unique=True), self.subsample_size-len(all_taken),
-                    #                                    replace=False, p=weight/weight.sum())), 0)
                     selected_points = np.concatenate((np.where(condition)[0],
                                                       np.random.choice(np.where(~condition)[0], self.subsample_size - condition.sum(),
                                                                        replace=False, p=weight[np.where(~condition)] / weight[np.where(~condition)].sum())), 0)
