@@ -77,12 +77,12 @@ class PointCloudClassifier:
             if n_points > self.subsample_size:
 
                 if self.smart_sampling:
+                    # We do smart sampling, so all points between 0 and 5m are always taken, 0-points and points higher than 15m p=0.5.
+                    # For points between 5 and 15m we do linear regression, so probs vary between 0.99 and 0.5.
                     z = cloud[2] * self.plot_radius
                     weight = np.full_like(z, 0.5)
-                    # weight[z == 0] = 0.5
                     weight[(z > 0) & (z <= 5)] = 1
                     weight[(z > 5) & (z <= 15)] = z[(z > 5) & (z <= 15)] * (-0.05) + 1.25
-                    # weight[z > 15] = 0.5
                     condition = np.asarray((z > 0) & (z <= 5))
                     selected_points = np.concatenate((np.where(condition)[0],
                                                       np.random.choice(np.where(~condition)[0], self.subsample_size - condition.sum(),
