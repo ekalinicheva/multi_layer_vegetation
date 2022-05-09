@@ -5,3 +5,4 @@ __pycache__/
 pytest.py
 model/model_pointnet.py
 model/model_pointnet2_old.py
+concurrent_methods_regressions/
