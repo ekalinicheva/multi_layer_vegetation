@@ -13,6 +13,11 @@ for pl_id in dataset.keys():
             len(dataset[pl_id]), dtype=[('x', 'f8'), ('y', 'f8'), ('z', 'f8'),
                                         ('intensity', 'f4'), ('num_returns', 'u1'), ('return_num', 'u1'),
                                         ('dist', 'f4'), ("class", "u1")])
+    else:
+        ply_array = np.ones(
+            len(dataset[pl_id]), dtype=[('x', 'f8'), ('y', 'f8'), ('z', 'f8'),
+                                        ('intensity', 'f4'), ('num_returns', 'u1'), ('return_num', 'u1'),
+                                        ("class", "u1")])
 
     ply_array["x"] = dataset[pl_id][:, 0]
     ply_array["y"] = dataset[pl_id][:, 1]
