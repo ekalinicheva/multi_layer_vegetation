@@ -66,14 +66,16 @@ def create_grids(dataset, raster_gt, args):
                 cylinder = cylinder_sampler(point_cloud_data)
 
                 nb_pts = len(cylinder.pos)
-                if nb_pts > args.min_pts_cylinder:
+                if nb_pts > args.min_pts_cylinder or args.inference or (not args.inference and pl_id not in args.train_pl):
                     print(nb_pts)
                     # Those are not the coords from the point clouds, but the cropping limits
                     x_min_cylinder, x_max_cylinder = x - args.plot_radius, x + args.plot_radius
                     y_min_cylinder, y_max_cylinder = y - args.plot_radius, y + args.plot_radius
                     if "d" in args.input_feats:
+                        # new_cylinder = torch.cat((cylinder.pos, cylinder.intensity.reshape(-1, 1), cylinder.nb_returns.reshape(-1, 1), cylinder.return_nb.reshape(-1, 1), cylinder.dist_water.reshape(-1, 1), cylinder.y.reshape(-1, 1),
+                        #                           torch.full((nb_pts, 1), x_min_cylinder), torch.full((nb_pts, 1), y_min_cylinder),
+                        #                           torch.full((nb_pts, 1), cylinder.pl_id), cylinder.origins.reshape(-1, 1)), 1)
                         new_cylinder = torch.cat((cylinder.pos, cylinder.intensity.reshape(-1, 1), cylinder.nb_returns.reshape(-1, 1), cylinder.return_nb.reshape(-1, 1), cylinder.dist_water.reshape(-1, 1), cylinder.y.reshape(-1, 1),
-                                                  torch.full((nb_pts, 1), x_min_cylinder), torch.full((nb_pts, 1), y_min_cylinder),
                                                   torch.full((nb_pts, 1), cylinder.pl_id), cylinder.origins.reshape(-1, 1)), 1)
                     else:
                         # new_cylinder = torch.cat((cylinder.pos, cylinder.intensity.reshape(-1, 1), cylinder.nb_returns.reshape(-1, 1), cylinder.return_nb.reshape(-1, 1), cylinder.y.reshape(-1, 1),

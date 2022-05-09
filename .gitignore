@@ -3,3 +3,5 @@
 /saved_data/
 __pycache__/
 pytest.py
+model/model_pointnet.py
+model/model_pointnet2_old.py

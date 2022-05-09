@@ -62,8 +62,9 @@ def cloud_loader(plot_id, dataset, gt_raster, min_coords, train, index_dict, arg
 
     if "d" in args.input_feats:
         cloud_data[:, 6] = cloud_data[:, 6] / args.dist_max
-    gt_points = cloud_data[:, args.n_input_feats].long()
+    gt_points = cloud_data[:, -3].long()
     cloud_data = cloud_data.T
+
 
     if plot_id not in index_dict:
         xy = cloud_data[:2] * args.plot_radius + xymean.reshape(2, 1) + args.mean_dataset.reshape(2, 1)
@@ -71,7 +72,7 @@ def cloud_loader(plot_id, dataset, gt_raster, min_coords, train, index_dict, arg
         xy_round = torch.floor(xy * (1 / args.pixel_size)) / (1 / args.pixel_size)
         new_xy = ((xy_round - xy_min_cylinder_true_coord) / args.pixel_size)  # no matter what, we always clip by whole coordinates
         ij = new_xy[[1, 0], :].int()  # we swap x and y tp be able to pass to ij discrete coords
-        ij[0] = args.diam_pix - 1 - ij[0]
+        ij[0] = int(args.plot_radius * 2 / args.pixel_size) - 1 - ij[0]
         # index_dict[plot_id] = ij
     else:
         ij = index_dict[plot_id].clone()

@@ -49,7 +49,7 @@ def reconstruct(pred_pointwise_all, cloud_all, stats_path, args, epoch_nb, cm, c
 
 
         pos = reconstructed_cloud_plot[:, n_pred_class:n_pred_class+3]
-        gt_label = reconstructed_cloud_plot[:, n_pred_class+args.n_input_feats]
+        gt_label = reconstructed_cloud_plot[:, -3]
 
         point_class_predictions = torch.argmax(reconstructed_cloud_plot[:, :n_pred_class], 1)
 

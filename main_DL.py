@@ -25,21 +25,13 @@ def main():
     run_name = str(time.strftime("%Y-%m-%d_%H%M%S"))
     args.run_name = run_name
 
-    stats_path = os.path.join(args.results_path, run_name) + "/"
-    args.stats_path = stats_path
-    create_dir(stats_path)
-    print("Results folder: ", stats_path)
+    args.stats_path = os.path.join(os.path.join(args.path, args.folder_results), run_name) + "/"
+    create_dir(args.stats_path)
+    print("Results folder: ", args.stats_path)
 
-    stats_file = os.path.join(stats_path, "stats.txt")
-    args.stats_file = stats_file
+    args.stats_file = os.path.join(args.stats_path, "stats.txt")
 
 
-    args.pl_id_list = np.sort(
-        [1, 10, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 3, 4, 5, 6, 7, 8, 9, 92])
-    args.test_pl = np.asarray([20, 15, 4])
-
-    args.val_pl = np.asarray([])
-    args.train_pl = np.setdiff1d(np.setdiff1d(args.pl_id_list, args.val_pl, assume_unique=True), args.test_pl, assume_unique=True)
 
     # args.inference_pl = np.arange(2, 30)
     #
@@ -50,12 +42,10 @@ def main():
 
 
 
-    # all_points, dataset, mean_dataset, col_full, gt_rasters_dataset, dist_max = open_ply_all(args)
-
     folder_name_params = "rg_" + str(args.regular_grid_size) + "_sg_" + str(args.sample_grid_size) + '_plot_r_' + str(args.plot_radius) + '_pixel_size_' + str(args.pixel_size) + '_min_pts_cyl_' + str(args.min_pts_cylinder) + "_n_plots_" + str(len(args.pl_id_list))
     path_cylinders = 'saved_data/' + folder_name_params + "/"
 
-    print_stats(stats_file, str(args), print_to_console=True)  # save all the args parameters
+    print_stats(args.stats_file, str(args), print_to_console=True)  # save all the args parameters
 
     # We open las files and create a dataset
     print("Loading data in memory")
@@ -124,7 +114,7 @@ def main():
     #           'loc_g': -4.122287330446177e-29, 'loc_v': -181.71013449013003, 'scale_g': 0.3961613455687545,
     #           'scale_v': 0.1669330117749968}
 
-    print_stats(stats_file, str(params), print_to_console=True)
+    print_stats(args.stats_file, str(params), print_to_console=True)
 
 
     train_list = args.train_pl
@@ -142,7 +132,7 @@ def main():
                                            functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, min_coords=xy_min_coords, train=False, index_dict=index_dict, args=args))
         train_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in train_list]][:, 1],
                                             functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=cylinder_rasters_gt, min_coords=xy_min_coords, train=True, index_dict=index_dict, args=args))
-        trained_model, final_train_losses_list, final_test_losses_list = train_full(args, params, train_set, test_set)
+        train_full(args, params, train_set, test_set)
     else:
         inference_set = tnt.dataset.ListDataset(pl_id_plus_cylinders[[i for i in range(len(pl_id_plus_cylinders[:, 0])) if pl_id_plus_cylinders[:, 0][i] in inference_list]][:, 1],
                                             functools.partial(cloud_loader, dataset=cylinders_dataset, gt_raster=None, min_coords=xy_min_coords, train=False, index_dict=index_dict, args=args))

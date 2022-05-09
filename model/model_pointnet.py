@@ -3,6 +3,19 @@ import torch
 import torch.nn as nn
 
 
+# # Network Parameters if we use simple PointNet
+# parser.add_argument('--MLP_1', default=[32, 32], type=list,
+#                     help="Parameters of the 1st MLP block (output size of each layer). See PointNet article")
+# parser.add_argument('--MLP_2', default=[64, 128], type=list,
+#                     help="Parameters of the 2nd MLP block (output size of each layer). See PointNet article")
+# parser.add_argument('--MLP_3', default=[64, 32], type=list,
+#                     help="Parameters of the 3rd MLP block (output size of each layer). See PointNet article")
+# parser.add_argument('--drop', default=0.4, type=float, help="Probability value of the DropOut layer of the model")
+# parser.add_argument('--soft', default=True, type=bool,
+#                     help="Whether we use softmax layer for the model output (True) of sigmoid (False)")
+
+
+
 def init_weights(m):
     if isinstance(m, nn.Conv1d):
         torch.nn.init.xavier_uniform(m.weight)
@@ -32,7 +45,7 @@ class PointNet(nn.Module):
         self.n_class = args.n_class
         self.drop = args.drop
         self.soft = args.soft
-        self.input_feat = args.n_input_feats
+        self.input_feat = len(args.input_feats)
 
         # since we don't know the number of layers in the MLPs, we need to use loops
         # to create the correct number of layers

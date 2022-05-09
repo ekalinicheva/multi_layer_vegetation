@@ -24,8 +24,6 @@ class SAModule(torch.nn.Module):
             pos, pos[idx], self.r, batch, batch[idx], max_num_neighbors=self.radius_num_point
         )
         edge_index = torch.stack([col, row], dim=0)
-        # x_dst = None if x is None else x[idx]
-        # x = self.conv((x, x_dst), (pos, pos[idx]), edge_index)
         x = self.conv(x, (pos, pos[idx]), edge_index)
         pos, batch = pos[idx], batch[idx]
         return x, pos, batch
@@ -76,47 +74,27 @@ class PointNet2(torch.nn.Module):
         self.subsample_size = args.subsample_size
         self.n_class = args.n_class
         self.drop = args.drop
-        self.n_input_feats = args.n_input_feats - 2  # - x and y
-        self.set_patience_attributes(args)
-        self.log_embeddings = args.log_embeddings
-        self.nbr_mlp = len(args.r_num_pts) + 1
-        self.args = args
+        self.n_input_feats = len(args.input_feats) - 2  # - x and y
         ndim = 3
 
 
-        if self.nbr_mlp==3:
-            MLP1 = [self.n_input_feats + ndim, 32, 32]
-            MLP2 = [MLP1[-1] + ndim, 64, 64]
-            MLP3 = [MLP2[-1] + ndim, 64, 128]
-            self.sa1_module = SAModule(args.ratio, args.rr[0], MLP(MLP1), args.r_num_pts[0])
-            self.sa2_module = SAModule(args.ratio, args.rr[1], MLP(MLP2), args.r_num_pts[1])
-            # self.sa3_module = SAModule(args.ratio[2], args.rr[2], MLP(MLP3), args.r_num_pts[2])
-            self.sa3_module = GlobalSAModule(MLP(MLP3))
+        MLP1 = [self.n_input_feats + ndim, 16, 32]
+        MLP2 = [MLP1[-1] + ndim, 32, 64]
+        MLP3 = [MLP2[-1] + ndim, 64, 128]
+        MLP4 = [MLP3[-1] + ndim, 128, 128]
+        self.sa1_module = SAModule(args.ratio[0], args.rr[0], MLP(MLP1), args.r_num_pts[0])
+        self.sa2_module = SAModule(args.ratio[1], args.rr[1], MLP(MLP2), args.r_num_pts[1])
+        self.sa3_module = SAModule(args.ratio[2], args.rr[2], MLP(MLP3), args.r_num_pts[2])
+        self.sa4_module = GlobalSAModule(MLP(MLP4))
 
-            MLP3_fp = [MLP3[-1] + MLP2[-1], 64, 64]
-            MLP2_fp = [MLP3_fp[-1] + MLP1[-1], 64, 32]
-            MLP1_fp = [MLP2_fp[-1] + self.n_input_feats, 32, 32]
-            self.fp3_module = FPModule(1, MLP(MLP3_fp))
-            self.fp2_module = FPModule(3, MLP(MLP2_fp))
-            self.fp1_module = FPModule(3, MLP(MLP1_fp))
-        else:   # if equal 4
-            MLP1 = [self.n_input_feats + ndim, 16, 32]
-            MLP2 = [MLP1[-1] + ndim, 32, 64]
-            MLP3 = [MLP2[-1] + ndim, 64, 128]
-            MLP4 = [MLP3[-1] + ndim, 128, 128]
-            self.sa1_module = SAModule(args.ratio[0], args.rr[0], MLP(MLP1), args.r_num_pts[0])
-            self.sa2_module = SAModule(args.ratio[1], args.rr[1], MLP(MLP2), args.r_num_pts[1])
-            self.sa3_module = SAModule(args.ratio[2], args.rr[2], MLP(MLP3), args.r_num_pts[2])
-            self.sa4_module = GlobalSAModule(MLP(MLP4))
-
-            MLP4_fp = [MLP4[-1] + MLP3[-1], 128, 128]
-            MLP3_fp = [MLP4_fp[-1] + MLP2[-1], 128, 64]
-            MLP2_fp = [MLP3_fp[-1] + MLP1[-1], 64, 32]
-            MLP1_fp = [MLP2_fp[-1] + self.n_input_feats, 32, 32, 32]
-            self.fp4_module = FPModule(1, MLP(MLP4_fp))
-            self.fp3_module = FPModule(3, MLP(MLP3_fp))
-            self.fp2_module = FPModule(3, MLP(MLP2_fp))
-            self.fp1_module = FPModule(3, MLP(MLP1_fp))
+        MLP4_fp = [MLP4[-1] + MLP3[-1], 128, 128]
+        MLP3_fp = [MLP4_fp[-1] + MLP2[-1], 128, 64]
+        MLP2_fp = [MLP3_fp[-1] + MLP1[-1], 64, 32]
+        MLP1_fp = [MLP2_fp[-1] + self.n_input_feats, 32, 32, 32]
+        self.fp4_module = FPModule(1, MLP(MLP4_fp))
+        self.fp3_module = FPModule(3, MLP(MLP3_fp))
+        self.fp2_module = FPModule(3, MLP(MLP2_fp))
+        self.fp1_module = FPModule(3, MLP(MLP1_fp))
 
         self.lin1 = torch.nn.Linear(MLP1_fp[-1], MLP1_fp[-1])
         self.lin2 = torch.nn.Linear(MLP1_fp[-1], self.n_class)
@@ -128,9 +106,6 @@ class PointNet2(torch.nn.Module):
             self = self.cuda()
 
     def forward(self, cloud_data):
-        # xyz = self.get_long_form(cloud_data["xyz"])
-        # cloud = cloud_data["cloud"]
-
         xyz = self.get_long_form(cloud_data[:, :3, :])
         # REMOVE x and y from consideration
         cloud_feat = cloud_data[:, 2:self.n_input_feats+2, :].clone()
@@ -157,31 +132,17 @@ class PointNet2(torch.nn.Module):
                 batch,
             )
 
-        if self.nbr_mlp == 3:
-            sa1_out = self.sa1_module(*sa0_out)
-            sa2_out = self.sa2_module(*sa1_out)
-            sa3_out = self.sa3_module(*sa2_out)
 
-            if self.log_embeddings:
-                self.last_G_tensor = sa3_out[0]
+        sa1_out = self.sa1_module(*sa0_out)
+        sa2_out = self.sa2_module(*sa1_out)
+        sa3_out = self.sa3_module(*sa2_out)
+        sa4_out = self.sa4_module(*sa3_out)
 
-            fp3_out = self.fp3_module(*sa3_out, *sa2_out)
-            fp2_out = self.fp2_module(*fp3_out, *sa1_out)
-            x, _, _ = self.fp1_module(*fp2_out, *sa0_out)
 
-        else:
-            sa1_out = self.sa1_module(*sa0_out)
-            sa2_out = self.sa2_module(*sa1_out)
-            sa3_out = self.sa3_module(*sa2_out)
-            sa4_out = self.sa4_module(*sa3_out)
-
-            if self.log_embeddings:
-                self.last_G_tensor = sa4_out[0]
-
-            fp4_out = self.fp4_module(*sa4_out, *sa3_out)
-            fp3_out = self.fp3_module(*fp4_out, *sa2_out)
-            fp2_out = self.fp2_module(*fp3_out, *sa1_out)
-            x, _, _ = self.fp1_module(*fp2_out, *sa0_out)
+        fp4_out = self.fp4_module(*sa4_out, *sa3_out)
+        fp3_out = self.fp3_module(*fp4_out, *sa2_out)
+        fp2_out = self.fp2_module(*fp3_out, *sa1_out)
+        x, _, _ = self.fp1_module(*fp2_out, *sa0_out)
 
         x = F.relu(self.lin1(x))
         x = F.dropout(x, p=self.drop, training=self.training)
@@ -202,59 +163,3 @@ class PointNet2(torch.nn.Module):
         data = torch.split(data, self.subsample_size, dim=0)
         return torch.stack(data).transpose(1, 2)
 
-    def set_patience_attributes(self, args):
-        """Reset patience. Useful when we load a pretrained model."""
-        self.stopped_early = False
-        self.best_metric_value = 10 ** 6
-        self.best_metric_epoch = 1
-        self.patience_in_epochs = args.patience_in_epochs
-
-    def stop_early(self, val_metric, epoch, args):
-        """Save best model state until now, based on a validation metric to minimize, if no improvement over n epochs."""
-        if val_metric < self.best_metric_value:
-            self.best_metric_value = val_metric
-            self.best_metric_epoch = epoch
-            self.save_state(args)
-        else:
-            if epoch < args.epoch_to_start_early_stop:
-                return False
-            if epoch >= self.best_metric_epoch + self.patience_in_epochs:
-                self.stopped_early = True
-                return True
-        return False
-
-    def save_state(self, args):
-        """Save model state in stats_path."""
-        checkpoint = {
-            "best_metric_epoch": self.best_metric_epoch,
-            "state_dict": self.state_dict(),
-            "best_metric_value": self.best_metric_value,
-        }
-
-        crossvalidating = args.current_fold_id > 0
-        save_path = os.path.join(
-            args.stats_path,
-            f"PCC_model_{'fold_n='+str(args.current_fold_id) if crossvalidating else 'full'}.pt",
-        )
-        torch.save(checkpoint, save_path)
-
-    def load_state(self, save_path):
-        """Load model state from a path."""
-        if self.is_cuda:
-            checkpoint = torch.load(save_path)
-        else:
-            checkpoint = torch.load(save_path, map_location=torch.device("cpu"))
-        self.load_state_dict(checkpoint["state_dict"])
-        self.best_metric_epoch = checkpoint["best_metric_epoch"]
-        self.best_metric_value = checkpoint["best_metric_value"]
-        return self
-
-    def load_best_state(self, args):
-        """Load best model state from early stopping checkpoint. Does not load the optimizer state."""
-        crossvalidating = args.current_fold_id > 0
-        save_path = os.path.join(
-            args.stats_path,
-            f"PCC_model_{'fold_n='+str(args.current_fold_id) if crossvalidating else 'full'}.pt",
-        )
-        self.load_state(save_path)
-        return self

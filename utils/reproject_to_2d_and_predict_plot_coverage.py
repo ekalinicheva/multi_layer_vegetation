@@ -14,6 +14,8 @@ def project_to_2d(pred_pointwise, pred_pointwise_b, ij_batch, PCC, args):
     batches_len = []
     restore_coords = []
 
+    raster_size_pix = int(args.plot_radius * 2 / args.pixel_size)
+
     # we project 3D points to 2D plane
     # We use torch scatter to process
     for b in range(len(pred_pointwise_b)):
@@ -36,7 +38,7 @@ def project_to_2d(pred_pointwise, pred_pointwise_b, ij_batch, PCC, args):
     index_batches = torch.cat(index_batches)
     index_group = torch.cat(index_group)
     restore_coords_batch = torch.cat(restore_coords)
-    pred_rasters = torch.full((len(pred_pointwise_b), args.diam_pix, args.diam_pix, args.nb_stratum), -1, dtype=torch.float)
+    pred_rasters = torch.full((len(pred_pointwise_b), raster_size_pix, raster_size_pix, args.nb_stratum), -1, dtype=torch.float)
 
     if PCC.is_cuda:
         index_batches = index_batches.cuda()
@@ -53,7 +55,7 @@ def project_to_2d(pred_pointwise, pred_pointwise_b, ij_batch, PCC, args):
 
     pred_rasters[restore_coords_batch[:, 0], restore_coords_batch[:, 1], restore_coords_batch[:, 2]] = pixel_max
 
-    pred_rasters_reshaped = pred_rasters.permute(0, 3, 1, 2).reshape(-1, args.diam_pix, args.diam_pix)
+    pred_rasters_reshaped = pred_rasters.permute(0, 3, 1, 2).reshape(-1, raster_size_pix, raster_size_pix)
 
     # pred_pl = scatter_mean(pixel_max.T, index_group).T
 

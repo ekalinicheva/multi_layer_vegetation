@@ -36,11 +36,11 @@ def create_database(s):
     pl_id = (re.search("Placette_([0-9]*)", s)).group(1)
     print(pl_id)
     # ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs_clipped.ply"
-    ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs.ply"
-    trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_cat.csv"
+    ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_data_xyzinr.ply"
+    trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_trees_params.csv"
 
 
-    if ply_trees_placette and os.path.exists(trees_csv) and int(pl_id)==6:
+    if ply_trees_placette and os.path.exists(trees_csv) and int(pl_id)==17:
         data_ply_trees_placette, col_full = open_ply(ply_trees_placette)
 
         path_placette = path + "arbres_par_placette/selected_data/Selected_data_for_placette_" + str(pl_id) + "/"

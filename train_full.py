@@ -42,7 +42,7 @@ def train_full(args, params, train_set, test_set):
 
     print("model done")
     # writer = SummaryWriter(results_path + "runs/"+run_name + "fold_" + str(fold_id) +"/")
-    writer = SummaryWriter(args.results_path + "runs/" + args.run_name + "/")
+    writer = SummaryWriter(os.path.join(args.path, args.folder_results) + "runs/" + args.run_name + "/")
 
     print('Total number of parameters: {}'.format(sum([p.numel() for p in model.parameters()])))
     print(model)

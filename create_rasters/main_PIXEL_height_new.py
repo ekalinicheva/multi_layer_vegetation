@@ -37,7 +37,7 @@ for s in selected_placette_folders_final:
     print(s)
     # ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs_clipped.ply"
     ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs.ply"
-    trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_cat.csv"
+    trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_trees_params.csv"
 
 
 

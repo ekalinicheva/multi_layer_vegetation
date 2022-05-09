@@ -23,7 +23,6 @@ def open_ply_all(args, selected_placettes=None):
 
     if "d" in args.input_feats:
         path_water = args.path + args.folder_water + "/water_clipped.tif"
-        ds_water = gdal.Open(path_water)
 
     dataset = {}
     gt_rasters_dataset = {}
@@ -37,7 +36,6 @@ def open_ply_all(args, selected_placettes=None):
     for s in selected_placette_folders_final:
         pl_id = int((re.search("Placette_([0-9]*)", s)).group(1))
         print(s)
-        # ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs_clipped.ply"
         ply_trees_placette = path_clouds + s + "/Pl_" + str(pl_id) + "_final_data_xyzinr.ply"
         if args.pixel_size%1!=0:
             pixel_size_string = re.sub('[.,]', '', str(args.pixel_size))
@@ -50,18 +48,14 @@ def open_ply_all(args, selected_placettes=None):
 
             path_strata_coverage_pl = path_strata_coverage + "Placette_" + str(pl_id) + "/"
             name_strata_coverage_pl = "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string
-            trees_csv = path_clouds + s + "/Pl_" + str(pl_id) + "_final_trees_cat.csv"
-            trees_data_csv = pd.read_csv(trees_csv, index_col=[0])
+            trees_csv = path_clouds + s + "/Pl_" + str(pl_id) + "_trees_params.csv"
+            trees_data_csv = pd.read_csv(trees_csv, index_col=False)
 
 
             gt_raster = open_tiff(path_strata_coverage_pl, name_strata_coverage_pl)
             gt_rasters_dataset[pl_id] = gt_raster
-            # np.asarray(image_array), H, W, geo, proj, bands_nb
             H, W, geo = gt_raster[1:4]
-
-            print(col_full)
             trees_placette_df = pd.DataFrame(data_ply_trees_placette, columns=col_full)
-            # print(len(trees_placette_df))
 
             data_final_df = trees_placette_df.join(trees_data_csv.set_index('tree_id'), on='tree_id')
             data_final_df = data_final_df.fillna(value=-1)
@@ -82,9 +76,6 @@ def open_ply_all(args, selected_placettes=None):
                 data_final_df.loc[(data_final_df['height'] > 5) & (data_final_df['cat'] == 23), 'tree_height_class'] = 4    # pine class
                 data_final_df.loc[(data_final_df['height'] > 5) & ((data_final_df['cat'] == 3) | (data_final_df['cat'] == 7)), 'tree_height_class'] = 5     # aulne and charme class
 
-
-
-
             # We add stem class
             for tree_id in np.unique(data_final_df["tree_id"])[2:]:
                 houppier = data_final_df[data_final_df["tree_id"] == tree_id].iloc[0]['crown_h']
@@ -92,19 +83,17 @@ def open_ply_all(args, selected_placettes=None):
                 if houppier > 0 and tree_height > 5:
                     radius = data_final_df[data_final_df["tree_id"] == tree_id].iloc[0]['trunc_r']
                     subset_tree = data_final_df[data_final_df["tree_id"] == tree_id].to_numpy()
+                    # we fix the height of the base of the tree crown, as the in-situ measure were often approximate
                     houppier_calc = fix_height(subset_tree, houppier, radius)
 
                     data_final_df.loc[
                         (data_final_df['tree_id'] == tree_id) & (data_final_df['z'] <= houppier_calc), 'tree_height_class'] = args.n_class - 1
-
-            tree_height_class = data_final_df["tree_height_class"].to_numpy()
 
             if "d" in args.input_feats:
 
                 ulx, uly, lrx, lry = geo[0], geo[3], geo[0] + W * args.pixel_size, geo[3] - H * args.pixel_size
 
                 driver_mem = gdal.GetDriverByName('MEM')
-                driver_tiff = gdal.GetDriverByName('GTiff')
                 srs = osr.SpatialReference()
                 srs.ImportFromEPSG(2154)    # Lambert-93 projection
                 proj = srs.ExportToWkt()
@@ -142,8 +131,6 @@ def open_ply_all(args, selected_placettes=None):
                 ds_dist_water_placette = None
 
                 data_final_df[['x_round', 'y_round']] = np.floor(data_final_df[['x', 'y']] * (1 / args.pixel_size)) / (1 / args.pixel_size)
-                # print(data_final_df[['x', 'y']].min(0))
-                # data_final_df[['j', 'i']] = ((data_final_df[['x_round', 'y_round']] - data_final_df[['x', 'y']].min()) / args.pixel_size)  # no matter what, we always clip by whole coordinates
                 data_final_df['j'] = ((data_final_df['x_round'] - ulx) / args.pixel_size).astype('int16')
                 data_final_df['i'] = ((data_final_df['y_round'] - lry) / args.pixel_size).astype('int16')
                 data_final_df['i'] = H - 1 - data_final_df['i']
@@ -178,7 +165,6 @@ def open_ply_all(args, selected_placettes=None):
     print("Number of points", points_count)
 
     mean_dataset = np.ceil(np.mean(all_points[:, :2], axis=0))
-    # max_intensity = np.max(all_points[:, 3], axis=0)
 
     if "d" in args.input_feats:
         max_dist = np.max(all_points[:, -3], axis=0)
@@ -191,31 +177,6 @@ def open_ply_all(args, selected_placettes=None):
     for pl_id in dataset.keys():
         dataset[pl_id][:, :2] = dataset[pl_id][:, :2] - mean_dataset
 
-    # for pl_id in dataset.keys():
-    #
-    #     ply_array = np.ones(
-    #         len(dataset[pl_id]), dtype=[("x", "f8"), ("y", "f8"), ("z", "f4"), ("class", "u1"),
-    #                              ("red", "u1"), ("green", "u1"), ("blue", "u1")]
-    #     )
-    #     ply_array["x"] = dataset[pl_id][:, 0]
-    #     ply_array["y"] = dataset[pl_id][:, 1]
-    #     ply_array["z"] = dataset[pl_id][:, 2]
-    #
-    #     dataset[pl_id][:, :2] = dataset[pl_id][:, :2] - mean_dataset
-    #
-    #     # ply_array["red"] = (dataset[pl_id][:, 0] - np.max(dataset[pl_id][:, 0]))/np.std(dataset[pl_id][:, 0]+1)*255/2
-    #     # ply_array["green"] = (dataset[pl_id][:, 1] - np.mean(dataset[pl_id][:, 1]))/np.std(dataset[pl_id][:, 0]+1)*255/2
-    #     # ply_array["blue"] = (dataset[pl_id][:, 2] - np.mean(dataset[pl_id][:, 2]))/np.std(dataset[pl_id][:, 0])*255
-    #
-    #     ply_array["red"] = (dataset[pl_id][:, 0] - np.min(dataset[pl_id][:, 0]))/ (np.max(dataset[pl_id][:, 0]) - np.min(dataset[pl_id][:, 0]))*255
-    #     ply_array["green"] = (dataset[pl_id][:, 1] - np.min(dataset[pl_id][:, 1]))/ (np.max(dataset[pl_id][:, 1]) - np.min(dataset[pl_id][:, 1]))*255
-    #     ply_array["blue"] = (dataset[pl_id][:, 2] - np.min(dataset[pl_id][:, 2]))/ (np.max(dataset[pl_id][:, 2]) - np.min(dataset[pl_id][:, 2]))*255
-    #
-    #     ply_array["class"] = dataset[pl_id][:, -1]
-    #
-    #     ply_file = PlyData([PlyElement.describe(ply_array, 'vertex')], text=True)
-    #     ply_file.write(
-    #         "/home/ign.fr_ekalinicheva/DATASETS/Processed_GT/Dataset_6classes/Placette_" + str(pl_id) + ".ply")
 
     all_points[:, :2] = all_points[:, :2] - mean_dataset
 
@@ -227,30 +188,18 @@ def open_ply_all(args, selected_placettes=None):
 
 def open_ply_inference(args):
     print("open ply")
-    annotated_points_count = 0
-    points_count = 0
-
-
     path_clouds = args.path_inference
-    path_strata_coverage = None
-
-
     selected_placette_folders_final = os.listdir(path_clouds)
-
 
     if "d" in args.input_feats:
         path_water = args.path + args.folder_water + "/water_clipped.tif"
-        ds_water = gdal.Open(path_water)
 
     dataset = {}
-
-    placette_id_list = args.inference_pl
 
     all_points = None
     for s in selected_placette_folders_final:
         pl_id = int((re.search("Placette_([0-9]*)", s)).group(1))
 
-        # ply_trees_placette = path_final_legs + s + "/Pl_" + str(pl_id) + "_final_trees_with_none_legs_clipped.ply"
         ply_trees_placette = path_clouds + s + "/Pl_" + str(pl_id) + "_inference_data_clipped_xyzinr.ply"
 
         if pl_id in args.inference_pl:
@@ -265,7 +214,6 @@ def open_ply_inference(args):
                 ulx, uly, lrx, lry = geo[0], geo[3], geo[0] + W * args.pixel_size, geo[3] - H * args.pixel_size
 
                 driver_mem = gdal.GetDriverByName('MEM')
-                driver_tiff = gdal.GetDriverByName('GTiff')
                 srs = osr.SpatialReference()
                 srs.ImportFromEPSG(2154)    # Lambert-93 projection
                 proj = srs.ExportToWkt()
@@ -305,15 +253,11 @@ def open_ply_inference(args):
                 data_final_df = pd.DataFrame(data_ply_trees_placette, columns=col_full)
 
                 data_final_df[['x_round', 'y_round']] = np.floor(data_final_df[['x', 'y']] * (1 / args.pixel_size)) / (1 / args.pixel_size)
-                # print(data_final_df[['x', 'y']].min(0))
-                # data_final_df[['j', 'i']] = ((data_final_df[['x_round', 'y_round']] - data_final_df[['x', 'y']].min()) / args.pixel_size)  # no matter what, we always clip by whole coordinates
                 data_final_df['j'] = ((data_final_df['x_round'] - ulx) / args.pixel_size).astype('int16')
                 data_final_df['i'] = ((data_final_df['y_round'] - lry) / args.pixel_size).astype('int16')
                 data_final_df['i'] = H - 1 - data_final_df['i']
 
 
-                # print(data_final_df[['j', 'i']])
-                # print(int(new_xy[:, 1] + new_xy[:, 0] * W))
                 data_final_df['new_index'] = data_final_df['j'] + data_final_df['i'] * W
 
                 data_final_df['d'] = water_dist_array.flatten()[data_final_df['new_index']]
@@ -329,7 +273,6 @@ def open_ply_inference(args):
 
 
             data_ply_trees_placette_new = data_ply_trees_placette_new[data_ply_trees_placette_new[:, 2]>=0] #we delete strange points
-
             dataset[pl_id] = data_ply_trees_placette_new
 
 
@@ -338,17 +281,11 @@ def open_ply_inference(args):
                 all_points = np.empty((0, data_ply_trees_placette_new.shape[1]))
             all_points = np.append(all_points, data_ply_trees_placette_new, axis=0)
 
-
     mean_dataset = np.ceil(np.mean(all_points[:, :2], axis=0))
-    # max_intensity = np.max(all_points[:, 3], axis=0)
-
-    if "d" in args.input_feats:
-        max_dist = np.max(all_points[:, -3], axis=0)
-    else:
-        max_dist = None
 
     if "d" in args.input_feats:
         ds_water = None
+
 
     for pl_id in dataset.keys():
         dataset[pl_id][:, :2] = dataset[pl_id][:, :2] - mean_dataset
@@ -357,5 +294,5 @@ def open_ply_inference(args):
     all_points[:, :2] = all_points[:, :2] - mean_dataset
 
 
-    return all_points, dataset, mean_dataset, col_full, max_dist
+    return all_points, dataset, mean_dataset, col_full
 

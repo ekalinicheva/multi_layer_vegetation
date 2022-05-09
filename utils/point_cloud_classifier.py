@@ -27,19 +27,20 @@ class PointCloudClassifier:
     """
 
     def __init__(self, args):
-        self.subsample_size = args.subsample_size  # number of points to subsample each point cloud in the batches
-        self.n_input_feats = 3  # size of the point descriptors in input
+        self.subsample_size = args.subsample_size   # number of points to subsample each point cloud in the batches
+        self.n_input_feats = 3                      # size of the point descriptors in input
         if len(args.input_feats) > 3:
             self.n_input_feats = len(args.input_feats)
-        self.n_class = args.n_class # number of classes in the output
-        self.is_cuda = args.cuda  # wether to use GPU acceleration
+        self.n_class = args.n_class                 # number of classes in the output
+        self.is_cuda = args.cuda                    # whether to use GPU acceleration
         self.indices_to_keep = []
         self.smart_sampling = args.smart_sampling
         self.plot_radius = args.plot_radius
-        feats = args.input_feats
-        for f in range(len(feats)):
-            if feats[f] in "xyzinrd":
+        all_possible_feats = "xyzinrd"
+        for f in range(len(all_possible_feats)):
+            if all_possible_feats[f] in args.input_feats:
                 self.indices_to_keep.append(f)
+
 
     def run(self, model, clouds, cm):
         """
@@ -49,11 +50,8 @@ class PointCloudClassifier:
         OUTPUT:
         pred = [sum_i n_points_i, n_class] float tensor : prediction for each element of the
              batch in a single tensor
-
         """
 
-
-        # number of clouds in the batch #TYPO
         n_batch = len(clouds)
         # will contain the prediction for all clouds in the batch
         prediction_batch = torch.zeros((self.n_class, 0))
@@ -106,8 +104,6 @@ class PointCloudClassifier:
             sampled_clouds[i_batch, :, :] = cloud.clone()  # place current sampled cloud in sampled_clouds
 
         point_logits, point_prediction = model(sampled_clouds)  # classify the batch of sampled clouds
-        # if point_prediction.dim()==2:
-        #     point_prediction = point_prediction.reshape(n_batch, self.subsample_size, self.n_class).permute(0, 2, 1)
         assert (point_prediction.shape == torch.Size([n_batch, self.n_class, self.subsample_size]))
 
         # interpolation to original point clouds
@@ -128,6 +124,5 @@ class PointCloudClassifier:
             prediction_batch_logits = torch.cat((prediction_batch_logits, prediction_cloud_logits), 1)
             prediction_batches.append(prediction_cloud)
             if cm is not None:
-                cm.add(cloud[self.n_input_feats].cpu().numpy(), torch.argmax(prediction_cloud, 0).cpu().detach().numpy())
-
+                cm.add(cloud[-3].cpu().numpy(), torch.argmax(prediction_cloud, 0).cpu().detach().numpy())
         return prediction_batch.permute(1, 0), prediction_batches, prediction_batch_logits.permute(1, 0)
