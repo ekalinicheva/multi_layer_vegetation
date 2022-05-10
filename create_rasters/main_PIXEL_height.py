@@ -228,7 +228,7 @@ def create_database(s):
             else:
                 matrix_plot_binary_shrub += matrix_binary_tree
 
-        path_results = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/data_point_clouds/"
+        path_results = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/stratum_coverage_2D/"
         path_strata_coverage_pl = path_results + "Placette_" + pl_id + "/"
         # path_strata_coverage_pl = path_strata_coverage + "Placette_" + pl_id + "/"
         create_dir(path_strata_coverage_pl)
