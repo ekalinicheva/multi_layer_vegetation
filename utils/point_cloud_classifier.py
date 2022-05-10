@@ -79,6 +79,7 @@ class PointCloudClassifier:
                     # For points between 5 and 15m we do linear regression, so probs vary between 0.99 and 0.5.
                     z = cloud[2] * self.plot_radius
                     weight = np.full_like(z, 0.5)
+                    weight[z == 0] = 0.75
                     weight[(z > 0) & (z <= 5)] = 1
                     weight[(z > 5) & (z <= 15)] = z[(z > 5) & (z <= 15)] * (-0.05) + 1.25
                     condition = np.asarray((z > 0) & (z <= 5))

@@ -77,7 +77,7 @@ def open_ply_all(args, selected_placettes=None):
                 data_final_df.loc[(data_final_df['height'] > 5) & ((data_final_df['cat'] == 3) | (data_final_df['cat'] == 7)), 'tree_height_class'] = 5     # aulne and charme class
 
             # We add stem class
-            for tree_id in np.unique(data_final_df["tree_id"])[2:]:
+            for tree_id in np.unique(data_final_df["tree_id"])[1:]:
                 houppier = data_final_df[data_final_df["tree_id"] == tree_id].iloc[0]['crown_h']
                 tree_height = data_final_df[data_final_df["tree_id"] == tree_id].iloc[0]['height']
                 if houppier > 0 and tree_height > 5:

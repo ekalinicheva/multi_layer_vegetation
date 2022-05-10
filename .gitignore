@@ -6,3 +6,9 @@ pytest.py
 model/model_pointnet.py
 model/model_pointnet2_old.py
 concurrent_methods_regressions/
+create_rasters/main_PIXEL_height_new.py
+create_rasters/create_mesh_upsample.py
+create_rasters/main_PIXEL.py
+create_rasters/clip_cylinders_for_beauty.py
+create_rasters/water_file.py
+data_loader/.idea

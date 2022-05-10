@@ -40,7 +40,7 @@ def create_database(s):
     trees_csv = path_final_legs + s + "/Pl_" + str(pl_id) + "_trees_params.csv"
 
 
-    if ply_trees_placette and os.path.exists(trees_csv) and int(pl_id)==17:
+    if ply_trees_placette and os.path.exists(trees_csv) and int(pl_id):
         data_ply_trees_placette, col_full = open_ply(ply_trees_placette)
 
         path_placette = path + "arbres_par_placette/selected_data/Selected_data_for_placette_" + str(pl_id) + "/"
@@ -52,7 +52,7 @@ def create_database(s):
 
         full_placette_df = pd.DataFrame(data_ply_trees_placette, columns=col_full, dtype=np.float64)
         trees_ids = np.sort(full_placette_df['tree_id'].astype(int).unique())[
-                    1:-1]  # We get trees ids, except for 0 - nodata and -1 ground points
+                    1:]  # We get trees ids, except for 0 - nodata and -1 ground points
 
 
         x_min_plot, y_min_plot = np.floor(np.min(data_ply_trees_placette[:, :2], axis=0)).astype(int)
@@ -228,8 +228,9 @@ def create_database(s):
             else:
                 matrix_plot_binary_shrub += matrix_binary_tree
 
-
-        path_strata_coverage_pl = path_strata_coverage + "Placette_" + pl_id + "/"
+        path_results = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/data_point_clouds/"
+        path_strata_coverage_pl = path_results + "Placette_" + pl_id + "/"
+        # path_strata_coverage_pl = path_strata_coverage + "Placette_" + pl_id + "/"
         create_dir(path_strata_coverage_pl)
 
 
