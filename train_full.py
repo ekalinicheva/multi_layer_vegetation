@@ -36,6 +36,9 @@ def train_full(args, params, train_set, test_set):
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler'])
         epoch = checkpoint['epoch']
+        args.z_max = checkpoint['z_max']
+        if "d" in args.input_feats:
+            args.dist_max = checkpoint['dist_max']
     else:
         epoch = 0
     print(scheduler.get_lr())
@@ -82,7 +85,7 @@ def train_full(args, params, train_set, test_set):
                         'model_state_dict': model.state_dict(),
                         'optimizer_state_dict': optimizer.state_dict(),
                         'scheduler': scheduler.state_dict(),
-                        'max_dist': args.dist_max,
+                        'dist_max': args.dist_max,
                         'z_max': args.z_max
                     }, args.stats_path + "/epoch_" + str(i_epoch + 1) + '.pt')
                 else:

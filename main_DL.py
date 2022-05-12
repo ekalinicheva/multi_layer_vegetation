@@ -33,8 +33,8 @@ def main():
 
 
 
-    # args.inference_pl = np.arange(2, 30)
-    #
+    args.inference_pl = np.arange(2, 30)
+
     # for ip in args.inference_pl:
     #     inference_pl_ = np.asarray([ip*10+1, ip*10+2, ip*10+3])
     #     for pl in inference_pl_:
@@ -87,7 +87,7 @@ def main():
         cylinder_rasters_gt = sum(cylinder_rasters_gt_by_plot.values(), [])
 
     else:
-        all_points, dataset, mean_dataset, col_full, gt_rasters_dataset = open_ply_inference(args)
+        all_points, dataset, mean_dataset, col_full = open_ply_inference(args)
         args.mean_dataset = mean_dataset
 
         cylinders_dataset_by_plot, _, xy_min_coords_by_plot = create_grids(dataset, None, args)

@@ -33,11 +33,12 @@ def inference(inference_set, args):
     PCC = PointCloudClassifier(args)
 
     try:
-        checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) + ".pt")
+        checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
         model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         epoch = checkpoint['epoch']
-        loss = checkpoint['loss']
+        args.z_max = checkpoint['z_max']
+        if "d" in args.input_feats:
+            args.dist_max = checkpoint['dist_max']
     except:
         model = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
 
