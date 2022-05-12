@@ -5,7 +5,7 @@ This repository contrains the WildForest3D dataset and the code for pipeline pre
 _Ekaterina Kalinicheva, Loic Landrieu, Clément Mallet, Nesrine Chehata "Multi-Layer Modeling of Dense Vegetation from Aerial LiDAR Scans", CVPR 2022, Earth Vision Workshop._ [\[arXiv\]](https://arxiv.org/abs/2204.11620)
 
 
-<img src="examples_images/gradient-4.png" width="500" />
+<img src="example_images/gradient-4.png" width="500" />
 
 **THE DESCRIPTION IS NOT FINALIZED YET!**
 
@@ -23,7 +23,8 @@ If you want the code to work properly, your folder structure should be the follo
 &emsp;│&emsp;└─Placette_XX  
 &emsp;│&emsp;&emsp;├─Pl_XX_final_data_xyzinr.ply  
 &emsp;│&emsp;&emsp;├─Pl_XX_trees_params.csv  
-&emsp;│&emsp;&emsp;└─Pl_XX_trees_bb.csv  
+&emsp;│&emsp;&emsp;├─Pl_XX_trees_bb.csv  
+&emsp;│&emsp;&emsp;└─Pl_XX_trees_bb_faces.ply  
 &emsp;├─gt_rasters (args.folder_gt_rasters)  
 &emsp;│&emsp;├─Placette_1  
 &emsp;│&emsp;├─Placette_2  
@@ -38,7 +39,8 @@ If you want the code to work properly, your folder structure should be the follo
 * `data_point_clouds/` - contains 29 folders `Placette_XX/` organized by plot ID, each of those folders contains: 
   * `Pl_XX_final_data_xyzinr.ply` that contains clipped plots with annotated point clouds, the points are annotated in an instance-wise way, so that each point contains the following information : XYZ coordinates, intensity value, number of returns, return number, and the ID of the instance the point belongs to. ID=0 corresponds to a non-annotated point. 
   * `Pl_XX_trees_params.csv` file with the parameters of each individual tree/bush instance. It contains information about each instance (its class name, class category, height, crown base height, etc). Using the script utils/open_ply_all.ply we can generate the 6 classes dataset that was used in the article. 
-  * `Pl_XX_trees_bb.csv` - coorfinates of axis-oriented bounding boxes (BB) for each annotated tree (not used in the article, but might be useful to someone in this world). Each BB is discribed by its XY center, the extent in X and Y axes, and the BB height. Note that we consider that the bottom Y coordinate is always 0.     
+  * `Pl_XX_trees_bb.csv` - coordinates of axis-oriented bounding boxes (BB) for each annotated tree (not used in the article, but might be useful to someone in this world). Each BB is discribed by its XY center, the extent in X and Y axes, and the BB height. Note that we consider that the bottom Y coordinate is always 0.
+  * `Pl_XX_trees_bb_faces.ply` - visualization of the BB from the .csv above.     
 * `gt_rasters/` - contains 29 folders `Placette_XX/` organized by plot ID, each of these folders contains: two GeoTIFF ground truth rasters generated from 3D point clouds (see the article for the details):
   * `Pl_XX_Coverage_sure_05.tif` (05 stands for the pixel size - 0.5m - though other pixel size rasters can be generated with the code `utils/generate_dataset.py`) - GT with binary occupancy maps for 3 vegetation layers : ground vegetation, understory, overstory. 1 - vegetataion, 0 - no vegetation, -1 - nodata. Nodata pixels are present, because we only have partial 3D annotation, so its projection on the rasters may create the ambiguity.
   * `Pl_XX_Coverage_height_05.tif` - the vegetation height of the vegetation-filled pixels by layer : ground vegetation (GV), understory, bottom of overstory and top of overstory. Note that by default, bottoms of GV and understory are 0.
@@ -47,7 +49,7 @@ If you want the code to work properly, your folder structure should be the follo
 
 ## Model
 
-<img src="examples_images/algo_scheme.png" width="750" />
+<img src="example_images/algo_scheme.png" width="750" />
 
 
 
@@ -65,7 +67,7 @@ The full pipeline description can be found in the article. The PointNet++ model 
 Our code saves the model and the results computed for test set every 5 epochs (parameter _args.n_epoch_test_ that can be modified). All the results are saved in the folder `results/`. Each model is saved in the subfolder `YYYY-MM-DD_HHMMSS/` which is created automatically once the code is launched. The following output is obtained at the end of each 5th (YY) epoch:
 * `Pl_XX_predicted_coverage_ep_YY.ply` - classified 3D point cloud (hard class assigment) at YY epoch for XX plot.
 * `Pl_XX_predicted_coverage_ep_YY.tif` - vegetation layers' occupancy prediction (soft assigment, obtained directly from output logits). Hard classification results are produced in the postprocessing step from 3D predictions.
-* `epoch_YY.pt` - 
+* `epoch_YY.pt` - saved model of YY-th epoch with the corresponding optimizer, scheduler and z_max and dist_max for data normalization.
 
 ## Postprocessing
 
