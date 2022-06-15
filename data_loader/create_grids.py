@@ -66,8 +66,9 @@ def create_grids(dataset, raster_gt, args):
                 cylinder = cylinder_sampler(point_cloud_data)
 
                 nb_pts = len(cylinder.pos)
-                if nb_pts > args.min_pts_cylinder or args.inference or (not args.inference and pl_id not in args.train_pl):
-                    print(nb_pts)
+                if (nb_pts > args.min_pts_cylinder and args.inference) or (nb_pts > args.min_pts_cylinder and not args.inference and pl_id in args.train_pl) \
+                        or (not args.inference and pl_id not in args.train_pl):
+                    # print(nb_pts)
                     # Those are not the coords from the point clouds, but the cropping limits
                     x_min_cylinder, x_max_cylinder = x - args.plot_radius, x + args.plot_radius
                     y_min_cylinder, y_max_cylinder = y - args.plot_radius, y + args.plot_radius

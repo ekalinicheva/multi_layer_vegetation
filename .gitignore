@@ -11,5 +11,6 @@ create_rasters/create_mesh_upsample.py
 create_rasters/main_PIXEL.py
 create_rasters/clip_cylinders_for_beauty.py
 create_rasters/water_file.py
-create_rasters/main_PIXEL_height.py
+create_rasters/create_mesh_new.py
 data_loader/.idea
+create_rasters/main_PIXEL_height.py

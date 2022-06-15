@@ -1,3 +1,5 @@
+# I AM STILL UPDATING THE DATASET, BUT IT IS ALREADY QUITE GOOD AS IT IS! (BUT NOT PERFECT YET)
+
 # Multi-Layer Modeling of Dense Vegetation from Aerial LiDAR Scans
 
 This repository contrains the WildForest3D dataset and the code for pipeline presented in the article:
@@ -46,6 +48,10 @@ If you want the code to work properly, your folder structure should be the follo
   * `Pl_XX_Coverage_height_05.tif` - the vegetation height of the vegetation-filled pixels by layer : ground vegetation (GV), understory, bottom of overstory and top of overstory. Note that by default, bottoms of GV and understory are 0.
 * `water_raster/` - folder with GeoTIFF raster `water_clipped.tif` that respresent the distance to the closest water source (rivers). Pixels size 1m. It helps to distinguish the alder class which likes being close to the water. When we generate dataset, we have to precise in the configuration if we want to use this feature. If yes, it is added to each 3D point of the dataset. This is not precised in the article, as we only distinguish coniferous from decidious trees in the initial research. The water feature was added after the article submission.
 
+### Species abbreviations
+We provide the excel file `Abbreviations_species.xlsl` in the main directory that contains french and latin names for the categories of species (29 species in total). Nevertheless, at the moment, we distinguish only 2 classes of overstory: coniferous (only pines) and decidious (all other species). 
+
+Note that some bushes from the abbreviation table are quite tall and may be higher than 5m.
 
 ## Model
 
@@ -69,7 +75,33 @@ Our code saves the model and the results computed for test set every 5 epochs (p
 * `Pl_XX_predicted_coverage_ep_YY.tif` - vegetation layers' occupancy prediction (soft assigment, obtained directly from output logits). Hard classification results are produced in the postprocessing step from 3D predictions.
 * `epoch_YY.pt` - saved model of YY-th epoch with the corresponding optimizer, scheduler and z_max and dist_max for data normalization.
 
+
+## Using pretreined model
+You can use an already pretrained model to continue learning. 
+For this ou should set :
+* _args.model_train = False_
+* _args.trained_ep_ - the epoch of the pretrained model you want to use
+* _args.path_model_ - the path to the folder with the pretrained model
+The model optimizer, scheduler, as well as data normalizaion parameters such as _z_max_ and _dist_max_ will be taked from the pretrained model.
+Otherwise, all the other parameters should be precised in the configuration file.
+The output will be saved in the `results/` folder in the same format as during the normal training.
+
+## Inference
+If you want to make predictions on some new unlabeled data, simply set:
+* _args.model_inference = True_
+* _args.trained_ep_ - the epoch of the trained model you want to use
+* _args.path_model_ - the path to the folder with the trained model
+* _args.inference_pl_ - the ids of the datasets you want to classify
+* _args.path_inference_ - the path to the folder with the inference data. Note that the structure of the folder, as well as file names should be the same as `data_point_clouds` folder.
+The output will be saved in the `results/` folder in the same format as during the normal training.
+
+
 ## Postprocessing
+Once the model is trained you can either work with the classified test data that is already in the result folder, either you can produce some new results using inference option.
+The point classification is in `Pl_XX_predicted_coverage_ep_YY.ply`,
+therefore you can use code `create_rasters/create_mesh_and_rasters.py` to generate binary occupancy maps, height maps, and a mesh.
+Finally, if you want to produce some supplementary statistics on the area of interest, you can use `create_rasters/create_different_results.py`.
+It will produce a csv file with different statistics at plot level, plus some supplementary visual results.
 
 
 ## Citation

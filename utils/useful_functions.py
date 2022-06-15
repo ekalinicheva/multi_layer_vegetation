@@ -37,6 +37,8 @@ def open_ply(ply_name):
         col_names = plydata['vertex'].data.dtype.names
         nbr_points = plydata['vertex'].count
         data = np.zeros(shape=[nbr_points, len(col_names)], dtype=np.float64)
+        pc = plydata['vertex'].data
+
         for c in range(len(col_names)):
             data[:, c] = plydata['vertex'].data[col_names[c]]
     return data, np.asarray(col_names)

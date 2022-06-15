@@ -263,7 +263,7 @@ def open_ply_inference(args):
                 data_final_df['d'] = water_dist_array.flatten()[data_final_df['new_index']]
                 data_final_df['d'].round(1)
                 # we put colums in right order, so features are at the beginning and then tree_id and class_by_height
-                inversed_cols = np.concatenate((col_full, ['d'], ['tree_height_class']),0)[np.concatenate(([range(len(col_full)-1), [-2, -3, -1]]), 0)]
+                inversed_cols = np.concatenate((col_full, ['d'], ['tree_height_class']), 0)[np.concatenate(([range(len(col_full)-1), [-2, -3, -1]]), 0)]
                 data_ply_trees_placette_new = data_final_df[
                     inversed_cols].to_numpy()
 

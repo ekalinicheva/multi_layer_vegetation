@@ -50,7 +50,6 @@ def train_full(args, params, train_set, test_set):
     print('Total number of parameters: {}'.format(sum([p.numel() for p in model.parameters()])))
     print(model)
 
-    # args.lr = model.lea
 
     # define the classifier
 
@@ -68,6 +67,7 @@ def train_full(args, params, train_set, test_set):
             train_losses = train(model, PCC, train_set, params, optimizer, cm, cm_2d, args)
             writer = write_to_writer(writer, args, i_epoch, train_losses, train=True)
             gc.collect()
+            torch.cuda.empty_cache()
 
             if (i_epoch + 1) % args.n_epoch_test == 0:
                 start_time = time.time()

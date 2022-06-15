@@ -5,7 +5,7 @@ import torchnet as tnt
 import gc
 import time
 from torch.utils.tensorboard import SummaryWriter
-from model.accuracy import print_stats
+from torch.optim.lr_scheduler import StepLR
 
 
 import torch.optim as optim
@@ -29,18 +29,30 @@ def tuple_of_tensors_to_tensor(tuple_of_tensors):
 def inference(inference_set, args):
     """eval on test set"""
     model = PointNet2(args)
-    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
-    PCC = PointCloudClassifier(args)
 
-    try:
-        checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
-        model.load_state_dict(checkpoint['model_state_dict'])
-        epoch = checkpoint['epoch']
-        args.z_max = checkpoint['z_max']
-        if "d" in args.input_feats:
-            args.dist_max = checkpoint['dist_max']
-    except:
-        model = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
+    # define the optimizer
+    optimizer = optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.wd)
+    scheduler = StepLR(optimizer, step_size=args.step_size, gamma=args.lr_decay)
+    PCC = PointCloudClassifier(args)
+    checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) + ".pt")
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    scheduler.load_state_dict(checkpoint['scheduler'])
+    epoch = checkpoint['epoch']
+    args.z_max = checkpoint['z_max']
+    if "d" in args.input_feats:
+        args.dist_max = checkpoint['dist_max']
+    # try:
+    #     checkpoint = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
+    #     model.load_state_dict(checkpoint['model_state_dict'])
+    #     optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    #     scheduler.load_state_dict(checkpoint['scheduler'])
+    #     epoch = checkpoint['epoch']
+    #     args.z_max = checkpoint['z_max']
+    #     if "d" in args.input_feats:
+    #         args.dist_max = checkpoint['dist_max']
+    # except:
+    #     model = torch.load(args.path_model + "epoch_" + str(args.trained_ep) +".pt")
 
 
 
@@ -56,8 +68,10 @@ def inference(inference_set, args):
 
     for index_batch, (cloud, _, _, yx, xy_min_cyl) in enumerate(loader):
         start_encoding_time = time.time()
+        torch.cuda.empty_cache()
+        gc.collect()
 
-        pred_pointwise, pred_pointwise_b, pred_pointwise_logits = PCC.run(model, cloud, None)  # compute the prediction
+        pred_pointwise, pred_pointwise_b, _ = PCC.run(model, cloud, None)  # compute the prediction
         pred_pointwise = pred_pointwise.detach()
         end_encoding_time = time.time()
 
@@ -68,7 +82,7 @@ def inference(inference_set, args):
 
         pred_pointwise_all.append(pred_pointwise)
         cloud_all.append(tuple_of_tensors_to_tensor(cloud).T)
-        del cloud, pred_pointwise, pred_pointwise_b, pred_pointwise_logits
+        del cloud, pred_pointwise, pred_pointwise_b
         gc.collect()
     print("encoding time", end_encoding_time - start_encoding_time)
 

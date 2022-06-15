@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/em_gamma" />
       <excludeFolder url="file://$MODULE_DIR$/garbage" />
       <excludeFolder url="file://$MODULE_DIR$/saved_data" />
+      <excludeFolder url="file://$MODULE_DIR$/concurrent_methods_regressions" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.7 (safe_environment)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

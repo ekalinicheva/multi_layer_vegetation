@@ -27,9 +27,6 @@ understory_height = 5
 pixel_size = 0.5
 
 
-# If we devide stratum by points height and not by the overall height of an entity, set this one to True, else False
-double_layer = False
-
 
 def create_database(s):
 # for s in selected_placette_folders_final:
@@ -47,9 +44,9 @@ def create_database(s):
         path_placette_res_final = path_final_legs + "Placette_" + str(pl_id) + "/"
         create_dir(path_placette_res_final)
 
+
+
         arbres_placette_gdf = gpd.read_file(path_placette + "arbres_placette_" + pl_id + ".shp")
-
-
         full_placette_df = pd.DataFrame(data_ply_trees_placette, columns=col_full, dtype=np.float64)
         trees_ids = np.sort(full_placette_df['tree_id'].astype(int).unique())[
                     1:]  # We get trees ids, except for 0 - nodata and -1 ground points
@@ -72,6 +69,9 @@ def create_database(s):
         matrix_plot_binary_understory = np.zeros_like(matrix_plot_binary_canopy)
         matrix_plot_binary_shrub = np.zeros_like(matrix_plot_binary_canopy)
 
+        matrix_plot_binary_shrub = np.zeros_like(matrix_plot_binary_canopy)
+
+
         matrix_plot_classes_canopy = np.full((H, W), -1, dtype=int)
         matrix_plot_classes_canopy_associated_height = np.full((H, W), -1, dtype=np.float32)    #we create this raster just to be able to produce correct canopy occupation gt
 
@@ -84,10 +84,16 @@ def create_database(s):
         geo = [x_min_plot, pixel_size, 0, y_max_plot, 0, -pixel_size]
 
         # Overall plot coverage
-        matrix_binary_pl_ground_sure = np.full((H, W), -1)
+        # matrix_binary_pl_ground_sure = np.full((H, W), -1)
         matrix_binary_pl_shrub_sure = np.full((H, W), -1)
         matrix_binary_pl_understory_sure = np.full((H, W), -1)
         matrix_binary_pl_canopy_sure = np.full((H, W), -1)
+
+        matrix_binary_pl_canopy_decid = np.zeros((H, W))
+        matrix_binary_pl_canopy_conif = np.zeros((H, W))
+        matrix_non_annotated_canopy = np.zeros((H, W))
+
+
 
         i = int((y_max_plot - y_min_plot) / pixel_size) - 1
         for y in np.arange(y_min_plot, y_max_plot, pixel_size).round(1):
@@ -99,8 +105,9 @@ def create_database(s):
 
                 # print(result, result_full)
                 if len(result)>0 or len(result_full)>0:
-                    if np.min(result['z']) < 0.1:
-                        matrix_binary_pl_ground_sure[i][j] = 1
+
+                    # if np.min(result['z']) < 0.1:
+                    #     matrix_binary_pl_ground_sure[i][j] = 1
                     if len(result) > 0:
                         if np.max(result['z']) <= shrub_height:
 
@@ -111,7 +118,7 @@ def create_database(s):
                                 matrix_plot_height_shrub[i][j] = np.max(result['z'])
                             else:
                                 matrix_binary_pl_shrub_sure[i][j] = 0
-                                matrix_binary_pl_ground_sure[i][j] = 1
+                                # matrix_binary_pl_ground_sure[i][j] = 1
 
 
                         elif np.max(result['z']) <= understory_height :
@@ -122,6 +129,8 @@ def create_database(s):
                         elif np.max(result['z']) > understory_height :
                             matrix_binary_pl_canopy_sure[i][j] = 1
                             matrix_plot_height_canopy[i][j] = np.max(result['z'])
+                            matrix_non_annotated_canopy[i][j] = 1   # we consider that there are some non-annotated points for the overstory
+
 
                     elif len(result_full)>0:
                         if np.max(result_full['z'])<= understory_height:
@@ -182,6 +191,7 @@ def create_database(s):
                     if len(result) > 0:
                         matrix_binary_tree[i][j] = 1
                         if height_real>understory_height: #HERE
+
                             no_data = [result_no_data[result_no_data['z']>understory_height]] if len(result_no_data[result_no_data['z']>understory_height])>0 else [1000]
                             # print(no_data)
                             matrix_plot_height_canopy[i][j] = max(np.max(result['z']), matrix_plot_height_canopy[i][j]) #HERE
@@ -190,6 +200,10 @@ def create_database(s):
                             matrix_plot_classes_canopy_associated_height[i][j] = np.max(result['z']) if np.max(result['z'])> max(matrix_plot_classes_canopy_associated_height[i][j], np.max(result_no_data['z'])) else max(matrix_plot_classes_canopy_associated_height[i][j], np.max(result_no_data['z']))# we create this raster just to be able to produce correct canopy occupation gt
                             matrix_plot_classes_canopy[i][j] = category if np.max(result['z'])==matrix_plot_classes_canopy_associated_height[i][j] else matrix_plot_classes_canopy[i][j]
 
+                            if category==23:
+                                matrix_binary_pl_canopy_conif[i][j] = 1
+                            else:
+                                matrix_binary_pl_canopy_decid[i][j] = 1
 
                             if matrix_plot_crown_base_canopy[i][j] != -1:
                                 if houppier < 1 and np.min(result['z']) < 4:
@@ -211,9 +225,6 @@ def create_database(s):
                             matrix_plot_height_shrub[i][j] = max(np.max(result['z']),
                                                                          matrix_plot_height_shrub[i][j])
                     # If we divide stratum by points height and not by the overall height of an entity, use this one
-                    if double_layer:
-                        if np.min(result['z'])<=understory_height:
-                            matrix_binary_tree_bottom[i][j] = 1
                     j += 1
                 i -= 1
 
@@ -221,16 +232,14 @@ def create_database(s):
 
             if height_real > understory_height:
                 matrix_plot_binary_canopy += matrix_binary_tree
-                if double_layer:
-                    matrix_plot_binary_understory += matrix_binary_tree_bottom
             elif height_real <= understory_height and height_real > shrub_height:
                 matrix_plot_binary_understory += matrix_binary_tree
             else:
                 matrix_plot_binary_shrub += matrix_binary_tree
 
-        path_results = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/stratum_coverage_2D/"
-        path_strata_coverage_pl = path_results + "Placette_" + pl_id + "/"
-        # path_strata_coverage_pl = path_strata_coverage + "Placette_" + pl_id + "/"
+        # path_results = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/stratum_coverage_2D/"
+        # path_strata_coverage_pl = path_results + "Placette_" + pl_id + "/"
+        path_strata_coverage_pl = path_strata_coverage + "Placette_" + pl_id + "/"
         create_dir(path_strata_coverage_pl)
 
 
@@ -245,114 +254,56 @@ def create_database(s):
 
 
         matrix_plot_classes_canopy[matrix_plot_classes_canopy == 23] = 4  # pine class
-        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 3) | (matrix_plot_classes_canopy == 7)] = 5    # aulne and charme class
-        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != 5) & (matrix_plot_classes_canopy != 7) & (
-        #             matrix_plot_classes_canopy != 23) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
-        matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
+        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 3) | (matrix_plot_classes_canopy == 7)] = 5    # aulne and charme class
+        matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != 5) & (matrix_plot_classes_canopy != 7) & (
+                    matrix_plot_classes_canopy != 23) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
+        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
         matrix_plot_classes_canopy[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
 
         matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
         matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
 
+        matrix_binary_pl_canopy_decid[(matrix_binary_pl_canopy_decid==0) & (matrix_non_annotated_canopy==1)]=-1
+        matrix_binary_pl_canopy_conif[(matrix_binary_pl_canopy_conif==0) & (matrix_non_annotated_canopy==1)]=-1
 
+        matrix_binary_pl_canopy_decid[matrix_binary_pl_canopy_sure==-1]=-1
+        matrix_binary_pl_canopy_conif[matrix_binary_pl_canopy_sure==-1]=-1
 
+        matrix_binary_pl_canopy_decid[matrix_binary_pl_canopy_sure==0]=0
+        matrix_binary_pl_canopy_conif[matrix_binary_pl_canopy_sure==0]=0
+
+        # path_strata_coverage_pl = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/stratum_coverage_2D/Placette_"+str(pl_id)+"/"
         pixel_size_string = re.sub('[.,]', '', str(pixel_size))
 
-        create_tiff(nb_channels=4,
-                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=W,
-                    height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_ground_sure],
-                                                                                 [matrix_binary_pl_shrub_sure],
-                                                                                 [matrix_binary_pl_understory_sure],
-                                                                                 [matrix_binary_pl_canopy_sure]),
-                                                                                0), geotransformation=geo, nodata= None)
-        create_tiff(nb_channels=4,
-                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=W,
-                    height=H, datatype=gdal.GDT_Float32, data_array=np.concatenate(([matrix_plot_height_shrub],
-                                                                                 [matrix_plot_height_understory],
-                                                                                 [matrix_plot_crown_base_canopy],
-                                                                                 [matrix_plot_height_canopy]),
-                                                                                0), geotransformation=geo, nodata= None)
+        # create_tiff(nb_channels=3,
+        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=W,
+        #             height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_shrub_sure],
+        #                                                                          [matrix_binary_pl_understory_sure],
+        #                                                                          [matrix_binary_pl_canopy_sure]),
+        #                                                                         0), geotransformation=geo, nodata= None)
+        # create_tiff(nb_channels=4,
+        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=W,
+        #             height=H, datatype=gdal.GDT_Float32, data_array=np.concatenate(([matrix_plot_height_shrub],
+        #                                                                          [matrix_plot_height_understory],
+        #                                                                          [matrix_plot_crown_base_canopy],
+        #                                                                          [matrix_plot_height_canopy]),
+        #                                                                         0), geotransformation=geo, nodata=None)
+        #
+        # create_tiff(nb_channels=2,
+        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_decid_conif_" + pixel_size_string + ".tif", width=W,
+        #             height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_canopy_decid],
+        #                                                                          [matrix_binary_pl_canopy_conif]),
+        #                                                                         0), geotransformation=geo, nodata=None)
+
+
         # geo = [x_min_plot, pixel_size/2, 0, y_max_plot, 0, -pixel_size/2]
         # create_tiff(nb_channels=1,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_6_classes_" + re.sub('[.,]', '', str(pixel_size/2)) + ".tif", width=W*2,
+        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_5_classes_" + re.sub('[.,]', '', str(pixel_size/2)) + ".tif", width=W*2,
         #             height=H*2, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy.repeat(2, axis=0).repeat(2, axis=1), geotransformation=geo, nodata= None)
 
-        # # Different pixel size
-        # pixel_size_1 = 1
-        #
-        # sure_rasters=np.concatenate(([matrix_binary_pl_ground_sure], [matrix_binary_pl_shrub_sure],
-        #                                                                                  [matrix_binary_pl_understory_sure],
-        #                                                                                  [matrix_binary_pl_canopy_sure]),
-        #                                                                                 0)
-        # sure_height_rasters = np.concatenate(([matrix_plot_height_shrub],
-        #                              [matrix_plot_height_understory],
-        #                              [matrix_plot_crown_base_canopy],
-        #                              [matrix_plot_height_canopy]),
-        #                             0)
-        #
-        # new_sure_raster_1 = np.full((4, int(np.ceil(H/2)), int(np.ceil(W/2))), -1, dtype=int)
-        # new_height_raster_1 = np.full((4, int(np.ceil(H/2)), int(np.ceil(W/2))), -1, dtype=float)
-        #
-        # for r in range(len(sure_rasters)):
-        #     for i in range(0,H,2):
-        #         for j in range(0,W,2):
-        #             binary_small = sure_rasters[r, i:i+2, j:j+2]
-        #             height_small = sure_height_rasters[r, i:i + 2, j:j + 2]
-        #             height_small_new = height_small[height_small>0]
-        #             # if len(height_small_new)>0:
-        #             #     new_height_raster_1[r, int(i / 2), int(j / 2)] = height_small[height_small > 0].mean()
-        #             # else:
-        #             #     new_height_raster_1[r, int(i / 2), int(j / 2)] = height_small[height_small > 0].max()
-        #             new_sure_raster_1[r, int(i/2), int(j/2)] = binary_small.max()
-        #             new_height_raster_1[r, int(i / 2), int(j / 2)] = height_small.max()
-        #
-        # pixel_size_string = re.sub('[.,]', '', str(pixel_size_1))
-        #
-        # geo = [x_min_plot, pixel_size_1, 0, y_max_plot, 0, -pixel_size_1]
-        #
-        # create_tiff(nb_channels=4,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=int(np.ceil(W/2)),
-        #             height=int(np.ceil(H/2)), datatype=gdal.GDT_Int16, data_array=new_sure_raster_1, geotransformation=geo, nodata= None)
-        # create_tiff(nb_channels=4,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=int(np.ceil(W/2)),
-        #             height=int(np.ceil(H/2)), datatype=gdal.GDT_Float32, data_array=new_height_raster_1, geotransformation=geo, nodata= None)
-        #
-        #
-        # # Pixel size 2
-        # pixel_size_2 = 2
-        #
-        #
-        # new_sure_raster_2 = np.full((4, int(np.ceil(H / 4)), int(np.ceil(W / 4))), -1, dtype=int)
-        # new_height_raster_2 = np.full((4, int(np.ceil(H / 4)), int(np.ceil(W / 4))), -1, dtype=float)
-        #
-        # for r in range(len(sure_rasters)):
-        #     for i in range(0, H, 4):
-        #         for j in range(0, W, 4):
-        #             binary_small = sure_rasters[r, i:i + 4, j:j + 4]
-        #             height_small = sure_height_rasters[r, i:i + 4, j:j + 4]
-        #             # height_small_new = height_small[height_small > 0]
-        #             # if len(height_small_new)>0:
-        #             #     new_height_raster_1[r, int(i / 2), int(j / 2)] = height_small[height_small > 0].mean()
-        #             # else:
-        #             #     new_height_raster_1[r, int(i / 2), int(j / 2)] = height_small[height_small > 0].max()
-        #             new_sure_raster_2[r, int(i / 4), int(j / 4)] = binary_small.max()
-        #             new_height_raster_2[r, int(i / 4), int(j / 4)] = height_small.max()
-        #
-        # pixel_size_string = re.sub('[.,]', '', str(pixel_size_2))
-        #
-        # geo = [x_min_plot, pixel_size_2, 0, y_max_plot, 0, -pixel_size_2]
-        #
-        # create_tiff(nb_channels=4,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(
-        #                 pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=int(np.ceil(W / 4)),
-        #             height=int(np.ceil(H / 4)), datatype=gdal.GDT_Int16, data_array=new_sure_raster_2, geotransformation=geo,
-        #             nodata=None)
-        # create_tiff(nb_channels=4,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(
-        #                 pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=int(np.ceil(W / 4)),
-        #             height=int(np.ceil(H / 4)), datatype=gdal.GDT_Float32, data_array=new_height_raster_2,
-        #             geotransformation=geo, nodata=None)
-
+        create_tiff(nb_channels=1,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_6_classes_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy, geotransformation=geo, nodata= None)
 
 
 if __name__ == '__main__':

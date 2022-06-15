@@ -22,6 +22,8 @@ parser.add_argument('--pl_id_list', default=[1, 10, 12, 13, 14, 15, 16, 17, 18, 
                     type=int, help="The IDs of plots that we use (train + test). By default, there are all of them.")
 parser.add_argument('--test_pl', default=[20, 15, 4],
                     type=int, help="The IDs of plots that we use for test.")
+parser.add_argument('--inference_pl', default=[1, 2, 3],
+                    type=int, help="The IDs of plots that we use for inference (in case we do it).")
 
 parser.add_argument('--cuda', default=1, type=int, help="Whether we use cuda (1) or not (0)")
 parser.add_argument('--folds', default=1, type=int, help="Number of folds for cross validation model training")
@@ -51,9 +53,6 @@ parser.add_argument('--r', default=1, type=float,
 # parser.add_argument('--NR_ite_max', default=10, type=int, help='Max number of Netwon-Rachson iteration')
 
 # Network Parameters
-parser.add_argument('--subsample_size', default=4096 * 4, type=int, help="Subsample cloud size")
-parser.add_argument('--smart_sampling', default=True, type=bool,
-                    help="Whether we sample points depending on their height or not")
 parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
 # parser.add_argument('--ratio', default=[0.5, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
 
@@ -72,12 +71,15 @@ parser.add_argument('--step_size', default=20, type=int,
                     help="After this number of steps we decrease learning rate. (Period of learning rate decay)")
 parser.add_argument('--lr_decay', default=0.5, type=float,
                     help="We multiply learning rate by this value after certain number of steps (see --step_size). (Multiplicative factor of learning rate decay)")
-parser.add_argument('--n_epoch', default=100, type=int, help="Number of training epochs")
+parser.add_argument('--n_epoch', default=150, type=int, help="Number of training epochs")
 parser.add_argument('--n_epoch_test', default=5, type=int, help="We evaluate every -th epoch")
-parser.add_argument('--batch_size', default=5, type=int, help="Size of the training batch")
+parser.add_argument('--batch_size', default=1, type=int, help="Size of the training batch")
 
 
 # Cylinder sampling parameters
+parser.add_argument('--subsample_size', default=4096 * 4, type=int, help="Subsample cloud size")
+parser.add_argument('--smart_sampling', default=False, type=bool,
+                    help="Whether we sample points depending on their height or not")
 parser.add_argument('--plot_radius', default=5, type=int, help="Size of sampled cylinder")
 parser.add_argument('--pixel_size', default=0.5, type=float, help="Size of occupancy maps pixels")
 
@@ -85,7 +87,7 @@ parser.add_argument('--regular_grid_size', default=5, type=int, help="Regular gr
 parser.add_argument('--sample_grid_size', default=1, type=int, help="Sample grid size")
 
 parser.add_argument('--nbr_training_samples', default=1000, type=int, help="How many samples per training step")
-parser.add_argument('--min_pts_cylinder', default=0, type=int,
+parser.add_argument('--min_pts_cylinder', default=500, type=int,
                     help="The min number of points in sampled cylinder, otherwise it is deleted")
 
 
@@ -93,13 +95,13 @@ parser.add_argument('--data_augmentation', default=True, type=bool,
                     help="Whether we do data augmentation or not.")
 
 
-parser.add_argument('--inference', default=False, type=bool,
+parser.add_argument('--inference', default=True, type=bool,
                     help="Whether we train model or produce the results with the trained one.")
-parser.add_argument('--path_inference', default="DATASETS/Processed_GT/inference_data/placettes_full/", type=str,
+parser.add_argument('--path_inference', default="DATASETS/Processed_GT/inference_data/sites100m_EPSG2154_full/", type=str,
                     help="Main folder directory")
-parser.add_argument('--trained_ep', default=60, type=int,
+parser.add_argument('--trained_ep', default=100, type=int,
                     help="The epoch we load from the pretrained model.")
-parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-05-05_170420/", type=str,
+parser.add_argument('--path_model', default="/home/ign.fr/ekalinicheva/DATASETS/Processed_GT/RESULTS_4_stratum/2022-05-09_120514/", type=str,
                     help="Path to the pretrained model in case we use it.")
 
 
@@ -115,6 +117,9 @@ assert (args.lr_decay < 1), "Learning rate decrease should be smaller than 1, as
 args.path = os.path.expanduser("~/" + args.path)
 args.path_inference = os.path.expanduser("~/" + args.path_inference)
 
+
+args.inference_pl = np.arange(1, 31)
+
 # args.pl_id_list = np.sort(
 #     [1, 10, 12, 13, 14, 15, 16, 17, 18, 19, 2, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 3, 4, 5, 6, 7, 8, 9, 92])
 # args.test_pl = np.asarray([20, 15, 4])
@@ -125,9 +130,3 @@ args.path_inference = os.path.expanduser("~/" + args.path_inference)
 args.pl_id_list = np.sort(args.pl_id_list)
 args.test_pl = np.sort(args.test_pl)
 args.train_pl = np.setdiff1d(args.pl_id_list, args.test_pl, assume_unique=True)
-
-# args.indices_to_keep = []
-# all_possible_feats = "xyzinrd"
-# for f in range(len(all_possible_feats)):
-#     if all_possible_feats[f] in args.input_feats:
-#         args.indices_to_keep.append(f)
