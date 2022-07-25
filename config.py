@@ -29,7 +29,7 @@ parser.add_argument('--cuda', default=1, type=int, help="Whether we use cuda (1)
 parser.add_argument('--folds', default=1, type=int, help="Number of folds for cross validation model training")
 
 # Model Parameters
-parser.add_argument('--n_class', default=6, type=int,
+parser.add_argument('--n_class', default=7, type=int,
                     help="[5,6,7] Size of the model output vector. In our case 6 - different vegetation coverage types: ground, ground vegetation, understory, decidious, coniferous, stem. "
                          "If 7 -  ground, ground vegetation, understory, decidious (mostly oaks), coniferous, aulne, stem")
 parser.add_argument('--nb_stratum', default=3, type=int,
@@ -57,8 +57,6 @@ parser.add_argument('--ratio', default=[0.33, 0.5, 0.5], type=int, help="Ratio o
 # parser.add_argument('--ratio', default=[0.5, 0.5, 0.5], type=int, help="Ratio of centroid of PointNet2 layers")
 
 parser.add_argument('--rr', default=[0.1, 0.25, 0.5], type=float, nargs=3, help="Radius of PointNet2 layers samplings")
-parser.add_argument('--r_num_pts', default=[12288, 4096, 1024], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
-# parser.add_argument('--r_num_pts', default=[8192, 2048, 512], type=int, nargs=3, help="The maximum number of neighbors to return of PointNet2 layers")
 
 parser.add_argument('--drop', default=0.25, type=float, help="Probability value of the DropOut layer of the model")
 # parser.add_argument("--log_embeddings", default=False, action="store_true",
@@ -73,12 +71,12 @@ parser.add_argument('--lr_decay', default=0.5, type=float,
                     help="We multiply learning rate by this value after certain number of steps (see --step_size). (Multiplicative factor of learning rate decay)")
 parser.add_argument('--n_epoch', default=150, type=int, help="Number of training epochs")
 parser.add_argument('--n_epoch_test', default=5, type=int, help="We evaluate every -th epoch")
-parser.add_argument('--batch_size', default=1, type=int, help="Size of the training batch")
+parser.add_argument('--batch_size', default=5, type=int, help="Size of the training batch")
 
 
 # Cylinder sampling parameters
 parser.add_argument('--subsample_size', default=4096 * 4, type=int, help="Subsample cloud size")
-parser.add_argument('--smart_sampling', default=False, type=bool,
+parser.add_argument('--smart_sampling', default=True, type=bool,
                     help="Whether we sample points depending on their height or not")
 parser.add_argument('--plot_radius', default=5, type=int, help="Size of sampled cylinder")
 parser.add_argument('--pixel_size', default=0.5, type=float, help="Size of occupancy maps pixels")
@@ -87,7 +85,7 @@ parser.add_argument('--regular_grid_size', default=5, type=int, help="Regular gr
 parser.add_argument('--sample_grid_size', default=1, type=int, help="Sample grid size")
 
 parser.add_argument('--nbr_training_samples', default=1000, type=int, help="How many samples per training step")
-parser.add_argument('--min_pts_cylinder', default=500, type=int,
+parser.add_argument('--min_pts_cylinder', default=250, type=int,
                     help="The min number of points in sampled cylinder, otherwise it is deleted")
 
 
@@ -95,7 +93,7 @@ parser.add_argument('--data_augmentation', default=True, type=bool,
                     help="Whether we do data augmentation or not.")
 
 
-parser.add_argument('--inference', default=True, type=bool,
+parser.add_argument('--inference', default=False, type=bool,
                     help="Whether we train model or produce the results with the trained one.")
 parser.add_argument('--path_inference', default="DATASETS/Processed_GT/inference_data/sites100m_EPSG2154_full/", type=str,
                     help="Main folder directory")

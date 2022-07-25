@@ -252,16 +252,45 @@ def create_database(s):
         matrix_plot_height_understory[matrix_binary_pl_understory_sure==0]=0
         matrix_plot_height_shrub[matrix_binary_pl_shrub_sure==0]=0
 
+        matrix_plot_classes_canopy_5 = matrix_plot_classes_canopy.copy()
+        matrix_plot_classes_canopy_6 = matrix_plot_classes_canopy.copy()
+        matrix_plot_classes_canopy_7 = matrix_plot_classes_canopy.copy()
 
-        matrix_plot_classes_canopy[matrix_plot_classes_canopy == 23] = 4  # pine class
-        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 3) | (matrix_plot_classes_canopy == 7)] = 5    # aulne and charme class
-        matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != 5) & (matrix_plot_classes_canopy != 7) & (
-                    matrix_plot_classes_canopy != 23) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
-        # matrix_plot_classes_canopy[(matrix_plot_classes_canopy != 4) & (matrix_plot_classes_canopy != -1)] = 3    # chene + others
-        matrix_plot_classes_canopy[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
 
-        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
-        matrix_plot_classes_canopy[(matrix_plot_classes_canopy == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
+        matrix_plot_classes_canopy_5[matrix_plot_classes_canopy_5 == 23] = 4  # pine class
+        matrix_plot_classes_canopy_5[(matrix_plot_classes_canopy_5 != 4) & (matrix_plot_classes_canopy_5 != -1)] = 3    # chene + others
+        matrix_plot_classes_canopy_5[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
+        matrix_plot_classes_canopy_5[(matrix_plot_classes_canopy_5 == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
+        matrix_plot_classes_canopy_5[(matrix_plot_classes_canopy_5 == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
+
+
+        matrix_plot_classes_canopy_6[matrix_plot_classes_canopy_6 == 23] = 4  # pine class
+        # matrix_plot_classes_canopy_6[(matrix_plot_classes_canopy_6 == 3) | (matrix_plot_classes_canopy_6 == 7)] = 5    # aulne and charme class
+        matrix_plot_classes_canopy_6[matrix_plot_classes_canopy_6 == 3] = 5    # aulne and charme class
+
+        matrix_plot_classes_canopy_6[(matrix_plot_classes_canopy_6 != 4) & (matrix_plot_classes_canopy_6 != 5) &
+                                     (matrix_plot_classes_canopy_6 != -1)] = 3    # chene + others
+        matrix_plot_classes_canopy_6[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
+        matrix_plot_classes_canopy_6[(matrix_plot_classes_canopy_6 == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
+        matrix_plot_classes_canopy_6[(matrix_plot_classes_canopy_6 == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
+
+
+
+        # matrix_plot_classes_canopy_7 = matrix_plot_classes_canopy_6.copy()
+
+        matrix_plot_classes_canopy_7[(matrix_plot_classes_canopy == 9) |
+                                     (matrix_plot_classes_canopy == 10)] = 3    # 2 chenes
+        matrix_plot_classes_canopy_7[matrix_plot_classes_canopy == 23] = 4  # pine class
+        matrix_plot_classes_canopy_7[matrix_plot_classes_canopy == 3] = 5    # aulne
+        matrix_plot_classes_canopy_7[(matrix_plot_classes_canopy_7 != 3) & (matrix_plot_classes_canopy_7 != 4) &
+                                     (matrix_plot_classes_canopy_7 != 5) & (matrix_plot_classes_canopy_7 != -1)] = 6
+        matrix_plot_classes_canopy_7[matrix_binary_pl_canopy_sure == 0] = 0  # hole in the canopy
+        matrix_plot_classes_canopy_7[(matrix_plot_classes_canopy_7 == 0) & (matrix_binary_pl_understory_sure==1)] = 2  # understory class
+        matrix_plot_classes_canopy_7[(matrix_plot_classes_canopy_7 == 0) & (matrix_binary_pl_shrub_sure==1)] = 1  # ground vegetation class
+
+
+
+
 
         matrix_binary_pl_canopy_decid[(matrix_binary_pl_canopy_decid==0) & (matrix_non_annotated_canopy==1)]=-1
         matrix_binary_pl_canopy_conif[(matrix_binary_pl_canopy_conif==0) & (matrix_non_annotated_canopy==1)]=-1
@@ -275,25 +304,25 @@ def create_database(s):
         # path_strata_coverage_pl = "/home/ign.fr_ekalinicheva/Desktop/WildForest3D/stratum_coverage_2D/Placette_"+str(pl_id)+"/"
         pixel_size_string = re.sub('[.,]', '', str(pixel_size))
 
-        # create_tiff(nb_channels=3,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=W,
-        #             height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_shrub_sure],
-        #                                                                          [matrix_binary_pl_understory_sure],
-        #                                                                          [matrix_binary_pl_canopy_sure]),
-        #                                                                         0), geotransformation=geo, nodata= None)
-        # create_tiff(nb_channels=4,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=W,
-        #             height=H, datatype=gdal.GDT_Float32, data_array=np.concatenate(([matrix_plot_height_shrub],
-        #                                                                          [matrix_plot_height_understory],
-        #                                                                          [matrix_plot_crown_base_canopy],
-        #                                                                          [matrix_plot_height_canopy]),
-        #                                                                         0), geotransformation=geo, nodata=None)
-        #
-        # create_tiff(nb_channels=2,
-        #             new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_decid_conif_" + pixel_size_string + ".tif", width=W,
-        #             height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_canopy_decid],
-        #                                                                          [matrix_binary_pl_canopy_conif]),
-        #                                                                         0), geotransformation=geo, nodata=None)
+        create_tiff(nb_channels=3,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_sure_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_shrub_sure],
+                                                                                 [matrix_binary_pl_understory_sure],
+                                                                                 [matrix_binary_pl_canopy_sure]),
+                                                                                0), geotransformation=geo, nodata= None)
+        create_tiff(nb_channels=4,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_height_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Float32, data_array=np.concatenate(([matrix_plot_height_shrub],
+                                                                                 [matrix_plot_height_understory],
+                                                                                 [matrix_plot_crown_base_canopy],
+                                                                                 [matrix_plot_height_canopy]),
+                                                                                0), geotransformation=geo, nodata=None)
+
+        create_tiff(nb_channels=2,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_decid_conif_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=np.concatenate(([matrix_binary_pl_canopy_decid],
+                                                                                 [matrix_binary_pl_canopy_conif]),
+                                                                                0), geotransformation=geo, nodata=None)
 
 
         # geo = [x_min_plot, pixel_size/2, 0, y_max_plot, 0, -pixel_size/2]
@@ -302,8 +331,22 @@ def create_database(s):
         #             height=H*2, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy.repeat(2, axis=0).repeat(2, axis=1), geotransformation=geo, nodata= None)
 
         create_tiff(nb_channels=1,
-                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_6_classes_" + pixel_size_string + ".tif", width=W,
-                    height=H, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy, geotransformation=geo, nodata= None)
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(pl_id) + "_Coverage_canopy_5_classes_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy_5, geotransformation=geo, nodata= None)
+
+
+        create_tiff(nb_channels=1,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(
+                        pl_id) + "_Coverage_canopy_6_classes_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy_6, geotransformation=geo,
+                    nodata=None)
+
+
+        create_tiff(nb_channels=1,
+                    new_tiff_name=path_strata_coverage_pl + "Pl_" + str(
+                        pl_id) + "_Coverage_canopy_7_classes_" + pixel_size_string + ".tif", width=W,
+                    height=H, datatype=gdal.GDT_Int16, data_array=matrix_plot_classes_canopy_7, geotransformation=geo,
+                    nodata=None)
 
 
 if __name__ == '__main__':

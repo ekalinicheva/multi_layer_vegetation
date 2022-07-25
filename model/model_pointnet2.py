@@ -24,7 +24,9 @@ class SAModule(torch.nn.Module):
             pos, pos[idx], self.r, batch, batch[idx], max_num_neighbors=self.radius_num_point
         )
         edge_index = torch.stack([col, row], dim=0)
-        x = self.conv(x, (pos, pos[idx]), edge_index)
+        x_dst = None if x is None else x[idx]
+        x = self.conv((x, x_dst), (pos, pos[idx]), edge_index)
+        # x = self.conv(x, (pos, pos[idx]), edge_index)
         pos, batch = pos[idx], batch[idx]
         return x, pos, batch
 
@@ -82,9 +84,9 @@ class PointNet2(torch.nn.Module):
         MLP2 = [MLP1[-1] + ndim, 32, 64]
         MLP3 = [MLP2[-1] + ndim, 64, 128]
         MLP4 = [MLP3[-1] + ndim, 128, 128]
-        self.sa1_module = SAModule(args.ratio[0], args.rr[0], MLP(MLP1), args.r_num_pts[0])
-        self.sa2_module = SAModule(args.ratio[1], args.rr[1], MLP(MLP2), args.r_num_pts[1])
-        self.sa3_module = SAModule(args.ratio[2], args.rr[2], MLP(MLP3), args.r_num_pts[2])
+        self.sa1_module = SAModule(args.ratio[0], args.rr[0], MLP(MLP1))
+        self.sa2_module = SAModule(args.ratio[1], args.rr[1], MLP(MLP2))
+        self.sa3_module = SAModule(args.ratio[2], args.rr[2], MLP(MLP3))
         self.sa4_module = GlobalSAModule(MLP(MLP4))
 
         MLP4_fp = [MLP4[-1] + MLP3[-1], 128, 128]
