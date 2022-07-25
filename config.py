@@ -29,12 +29,12 @@ parser.add_argument('--cuda', default=1, type=int, help="Whether we use cuda (1)
 parser.add_argument('--folds', default=1, type=int, help="Number of folds for cross validation model training")
 
 # Model Parameters
-parser.add_argument('--n_class', default=7, type=int,
+parser.add_argument('--n_class', default=6, type=int,
                     help="[5,6,7] Size of the model output vector. In our case 6 - different vegetation coverage types: ground, ground vegetation, understory, decidious, coniferous, stem. "
                          "If 7 -  ground, ground vegetation, understory, decidious (mostly oaks), coniferous, aulne, stem")
 parser.add_argument('--nb_stratum', default=3, type=int,
                     help="Number of vegetation stratum that we compute 3 - ground vegetation + understory + overstory")
-parser.add_argument('--input_feats', default='xyzi', type=str,
+parser.add_argument('--input_feats', default='xyzinr', type=str,
                     help="Point features that we keep. To choose between xyzinrd. Please, do not permute. "
                          "xyz - coordinates, i - intensity, n - number of returns, r - return number, d - distance to river.")
 
